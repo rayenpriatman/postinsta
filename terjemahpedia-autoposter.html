@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Poster Instagram — Terjemahpedia</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+
+.header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 16px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+.logo { width: 36px; height: 36px; background: linear-gradient(135deg, #f09433, #dc2743, #bc1888); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+.header-text h1 { font-size: 16px; font-weight: 700; }
+.header-text p { font-size: 12px; color: #888; }
+
+.layout { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+
+/* ONE COMMAND BOX */
+.command-box { background: #fff; border: 2px solid #1a1a1a; border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+.command-label { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.command-input-row { display: flex; gap: 10px; }
+.command-input { flex: 1; padding: 14px 16px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+.command-input:focus { border-color: #1a1a1a; }
+.command-btn { padding: 14px 24px; background: linear-gradient(135deg, #f09433, #dc2743, #bc1888); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; transition: opacity 0.15s; }
+.command-btn:hover { opacity: 0.9; }
+.command-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.command-tip { font-size: 12px; color: #aaa; margin-top: 10px; }
+.command-tip strong { color: #555; }
+
+/* PROGRESS */
+.progress-box { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; margin-bottom: 16px; display: none; }
+.progress-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.step-list { list-style: none; }
+.step-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; font-size: 14px; color: #888; }
+.step-item.done { color: #3b6d11; }
+.step-item.active { color: #1a1a1a; font-weight: 500; }
+.step-item.error { color: #E24B4A; }
+.step-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.step-dot.spinning { border-top-color: transparent; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESULT */
+.result-box { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; margin-bottom: 16px; display: none; }
+.result-header { padding: 16px 20px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; }
+.result-header h3 { font-size: 15px; font-weight: 600; }
+.result-body { padding: 20px; }
+.preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.poster-preview { border-radius: 10px; overflow: hidden; background: #f0f0f0; min-height: 200px; }
+.poster-preview img { width: 100%; display: block; }
+.caption-preview { font-size: 14px; line-height: 1.7; color: #333; white-space: pre-wrap; background: #f8f8f6; border-radius: 8px; padding: 14px; max-height: 300px; overflow-y: auto; }
+.result-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+
+/* POST STATUS */
+.post-status { border-radius: 10px; padding: 14px 16px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+.post-status.success { background: #eaf3de; color: #3b6d11; }
+.post-status.error { background: #fcebeb; color: #a32d2d; }
+.post-status.loading { background: #f0f0f0; color: #555; }
+
+/* SETTINGS */
+.settings-box { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.settings-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.settings-body { display: none; }
+.settings-body.open { display: block; }
+.field { margin-bottom: 14px; }
+label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: 500; }
+input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.15s; }
+input:focus, textarea:focus { border-color: #1a1a1a; }
+input[type="password"] { letter-spacing: 2px; }
+.tip { font-size: 12px; color: #aaa; margin-top: 4px; line-height: 1.5; }
+.tip a { color: #185fa5; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; font-size: 13px; font-family: inherit; cursor: pointer; border-radius: 8px; border: 1px solid #e0e0e0; background: #fff; color: #1a1a1a; transition: all 0.15s; font-weight: 500; }
+.btn:hover { background: #f5f5f5; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.btn-primary:hover { background: #333; }
+.btn-ig { background: linear-gradient(135deg, #f09433, #dc2743, #bc1888); color: white; border: none; }
+
+/* HISTORY */
+.history-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.history-item:last-child { border-bottom: none; }
+.history-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #f0f0f0; flex-shrink: 0; }
+.history-info { flex: 1; min-width: 0; }
+.history-cmd { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-time { font-size: 12px; color: #888; }
+.badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+.badge-ok { background: #eaf3de; color: #3b6d11; }
+.badge-fail { background: #fcebeb; color: #a32d2d; }
+
+.spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+
+@media (max-width: 520px) {
+  .preview-grid { grid-template-columns: 1fr; }
+  .command-input-row { flex-direction: column; }
+  .row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">📸</div>
+  <div class="header-text">
+    <h1>Auto Poster Instagram</h1>
+    <p>1 perintah → poster + caption + posting otomatis</p>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- COMMAND BOX -->
+  <div class="command-box">
+    <div class="command-label">✍️ Ketik perintah Anda</div>
+    <div class="command-input-row">
+      <input type="text" class="command-input" id="command"
+        placeholder="buat poster terjemahpedia jasa terjemah no kontak 082323963884"
+        onkeydown="if(event.key==='Enter') runAll()">
+      <button class="command-btn" onclick="runAll()" id="run-btn">🚀 Jalankan</button>
+    </div>
+    <div class="command-tip">
+      Contoh: <strong>"buat poster promosi diskon 50% terjemahpedia hubungi 082323963884"</strong> atau <strong>"poster layanan terjemah dokumen resmi terjemahpedia"</strong>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-box" id="progress-box">
+    <div class="progress-title">⚙️ Sedang memproses...</div>
+    <ul class="step-list">
+      <li class="step-item" id="step-caption">
+        <div class="step-dot" id="dot-caption">1</div>
+        <span id="txt-caption">Generate caption & hashtag</span>
+      </li>
+      <li class="step-item" id="step-image">
+        <div class="step-dot" id="dot-image">2</div>
+        <span id="txt-image">Generate poster dengan AI</span>
+      </li>
+      <li class="step-item" id="step-post">
+        <div class="step-dot" id="dot-post">3</div>
+        <span id="txt-post">Posting ke Instagram</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-box" id="result-box">
+    <div class="result-header">
+      <h3>✅ Hasil Generate</h3>
+      <span id="post-badge"></span>
+    </div>
+    <div class="result-body">
+      <div class="preview-grid">
+        <div>
+          <div style="font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">POSTER</div>
+          <div class="poster-preview" id="poster-preview">
+            <div style="padding:40px; text-align:center; color:#aaa; font-size:13px;">Generating...</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn" style="flex:1; justify-content:center;" onclick="downloadPoster()">⬇️ Download</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">CAPTION & HASHTAG</div>
+          <div class="caption-preview" id="caption-preview"></div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn" style="flex:1; justify-content:center;" onclick="copyCaption()">📋 Salin</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="post-result" style="margin-top:16px;"></div>
+
+      <div class="result-actions">
+        <button class="btn btn-ig" onclick="postToIG()" id="post-btn" style="display:none;">📸 Post ke Instagram</button>
+        <button class="btn btn-primary" onclick="runAll()">🔄 Generate ulang</button>
+        <button class="btn" onclick="editCaption()">✏️ Edit caption</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-box">
+    <div class="settings-title" onclick="toggleSettings()">
+      ⚙️ Pengaturan Meta API
+      <span id="settings-arrow" style="margin-left:auto; color:#aaa;">▼</span>
+      <span id="settings-status" style="font-size:12px; margin-left:8px;"></span>
+    </div>
+    <div class="settings-body" id="settings-body">
+      <div class="row">
+        <div class="field">
+          <label>Access Token Meta</label>
+          <div style="display:flex; gap:6px;">
+            <input type="password" id="access-token" placeholder="EAAxxxxx..." style="flex:1;">
+            <button class="btn" style="padding:10px;" onclick="toggleToken()">👁️</button>
+          </div>
+          <p class="tip">Dari <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Meta Graph API Explorer</a></p>
+        </div>
+        <div class="field">
+          <label>Instagram Account ID</label>
+          <input type="text" id="ig-id" placeholder="17841400000000000">
+          <p class="tip">ID dimulai dengan 178... (17 digit)</p>
+        </div>
+      </div>
+      <div class="field">
+        <label>Anthropic API Key (untuk caption AI)</label>
+        <input type="password" id="anthropic-key" placeholder="sk-ant-api03-...">
+        <p class="tip">Dari <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> — untuk generate caption otomatis</p>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Simpan</button>
+        <button class="btn" onclick="testConn()">🔌 Test koneksi</button>
+        <span id="conn-status" style="font-size:13px;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="settings-box">
+    <div class="settings-title" onclick="toggleHistory()">
+      📋 Riwayat Posting
+      <span id="history-arrow" style="margin-left:auto; color:#aaa;">▼</span>
+    </div>
+    <div class="settings-body" id="history-body">
+      <div id="history-list">
+        <p style="font-size:13px; color:#aaa; text-align:center; padding:20px;">Belum ada riwayat posting.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =====================
+// STATE
+// =====================
+let currentCaption = '';
+let currentImageUrl = '';
+let history = JSON.parse(localStorage.getItem('ap_history') || '[]');
+
+// =====================
+// LOAD SETTINGS
+// =====================
+window.onload = () => {
+  const t = localStorage.getItem('ap_token');
+  const id = localStorage.getItem('ap_ig_id');
+  const ak = localStorage.getItem('ap_anthropic');
+  if (t) document.getElementById('access-token').value = t;
+  if (id) document.getElementById('ig-id').value = id;
+  if (ak) document.getElementById('anthropic-key').value = ak;
+  if (t && id) {
+    document.getElementById('settings-status').innerHTML = '<span style="color:#3b6d11">✅ Tersimpan</span>';
+  }
+  renderHistory();
+};
+
+// =====================
+// MAIN: RUN ALL
+// =====================
+async function runAll() {
+  const cmd = document.getElementById('command').value.trim();
+  if (!cmd) { alert('Masukkan perintah terlebih dahulu'); return; }
+
+  const token = localStorage.getItem('ap_token');
+  const igId = localStorage.getItem('ap_ig_id');
+
+  // Reset UI
+  document.getElementById('progress-box').style.display = 'block';
+  document.getElementById('result-box').style.display = 'none';
+  document.getElementById('post-result').innerHTML = '';
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<span class="spinner"></span> Memproses...';
+
+  resetSteps();
+  currentCaption = '';
+  currentImageUrl = '';
+
+  // STEP 1: Generate Caption
+  setStep('caption', 'active', '⏳', 'Generating caption & hashtag...');
+  try {
+    currentCaption = await generateCaption(cmd);
+    setStep('caption', 'done', '✓', 'Caption & hashtag selesai');
+  } catch(e) {
+    setStep('caption', 'error', '✗', 'Gagal generate caption: ' + e.message);
+    finishRun();
+    return;
+  }
+
+  // STEP 2: Generate Image
+  setStep('image', 'active', '⏳', 'Generating poster dengan AI... (30-60 detik)');
+  try {
+    currentImageUrl = await generateImage(cmd);
+    setStep('image', 'done', '✓', 'Poster selesai dibuat');
+  } catch(e) {
+    setStep('image', 'error', '✗', 'Gagal generate poster: ' + e.message);
+    // Tetap lanjut tampilkan caption meski gambar gagal
+  }
+
+  // Tampilkan hasil
+  showResult();
+
+  // STEP 3: Post ke Instagram (kalau token ada)
+  if (token && igId && currentImageUrl) {
+    setStep('post', 'active', '⏳', 'Posting ke Instagram...');
+    try {
+      await postInstagram(token, igId, currentImageUrl, currentCaption);
+      setStep('post', 'done', '✓', 'Berhasil diposting ke Instagram! 🎉');
+      showPostStatus('success', '✅ Berhasil diposting ke Instagram!');
+      addHistory(cmd, currentImageUrl, 'posted');
+    } catch(e) {
+      setStep('post', 'error', '✗', 'Gagal posting: ' + e.message);
+      showPostStatus('error', '❌ Gagal posting: ' + e.message);
+      document.getElementById('post-btn').style.display = 'inline-flex';
+      addHistory(cmd, currentImageUrl, 'failed');
+    }
+  } else {
+    setStep('post', 'error', '!', token ? 'URL gambar tidak tersedia' : 'Token belum diatur — klik "Post ke Instagram" manual');
+    document.getElementById('post-btn').style.display = token && igId ? 'inline-flex' : 'none';
+    if (!token || !igId) {
+      showPostStatus('error', '⚠️ Atur Access Token & Account ID di Pengaturan untuk posting otomatis');
+    }
+  }
+
+  finishRun();
+}
+
+// =====================
+// GENERATE CAPTION
+// =====================
+async function generateCaption(cmd) {
+  const anthropicKey = localStorage.getItem('ap_anthropic');
+
+  if (!anthropicKey) {
+    // Fallback caption sederhana tanpa AI
+    return `✨ ${cmd}\n\n📞 Hubungi kami sekarang untuk informasi lebih lanjut!\n\n#terjemahpedia #jasaterjemah #terjemahan #translasi #terjemahprofesional #jasaterjemahmurah #terjemahdokumen #translationservice #jasaterjemahindonesia #terjemahresmi`;
+  }
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': anthropicKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 800,
+      messages: [{
+        role: 'user',
+        content: `Buat caption Instagram yang menarik dan engaging berdasarkan perintah ini: "${cmd}"
+
+Ketentuan:
+- Bahasa Indonesia yang natural dan friendly
+- 2-3 paragraf pendek yang engaging
+- Call to action yang kuat
+- 15-20 hashtag relevan di bagian akhir
+- Sertakan nomor kontak jika ada dalam perintah
+- Gunakan emoji secukupnya
+
+Langsung tulis captionnya saja tanpa label atau penjelasan.`
+      }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content.map(c => c.text || '').join('');
+}
+
+// =====================
+// GENERATE IMAGE (Puter.js)
+// =====================
+async function generateImage(cmd) {
+  // Build smart prompt dari perintah user
+  const promptRes = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': localStorage.getItem('ap_anthropic') || '',
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: `Convert this Indonesian instruction to an English image prompt for a professional Instagram poster: "${cmd}". Include: professional poster design, clean typography, modern layout, high quality, commercial design. Max 100 words, prompt only.`
+      }]
+    })
+  }).catch(() => null);
+
+  let imagePrompt = `Professional Instagram poster for translation service, modern design, blue and gold colors, clean typography, business card style, high quality commercial design`;
+
+  if (promptRes) {
+    const pd = await promptRes.json().catch(() => null);
+    if (pd && pd.content) imagePrompt = pd.content.map(c => c.text || '').join('');
+  } else {
+    // Fallback: buat prompt dari kata kunci
+    imagePrompt = `Professional Instagram poster: ${cmd}, modern graphic design, blue navy and gold color scheme, clean minimalist layout, professional typography, high quality`;
+  }
+
+  // Generate via Puter.js
+  const imgEl = await puter.ai.txt2img(imagePrompt, false, 'dall-e-3');
+
+  // Extract URL dari img element
+  if (imgEl && imgEl.src) return imgEl.src;
+
+  // Fallback ke Pollinations jika Puter gagal
+  const seed = Math.floor(Math.random() * 999999);
+  const encoded = encodeURIComponent(imagePrompt + ', professional poster design, instagram post');
+  return `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1080&seed=${seed}&nologo=true&enhance=true`;
+}
+
+// =====================
+// POST TO INSTAGRAM
+// =====================
+async function postInstagram(token, igId, imageUrl, caption) {
+  // Step 1: Create container
+  const r1 = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image_url: imageUrl, caption: caption, access_token: token })
+  });
+  const d1 = await r1.json();
+  if (d1.error) throw new Error(d1.error.message);
+
+  // Step 2: Publish
+  const r2 = await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ creation_id: d1.id, access_token: token })
+  });
+  const d2 = await r2.json();
+  if (d2.error) throw new Error(d2.error.message);
+  return d2.id;
+}
+
+// =====================
+// SHOW RESULT
+// =====================
+function showResult() {
+  document.getElementById('result-box').style.display = 'block';
+  document.getElementById('caption-preview').textContent = currentCaption;
+
+  const preview = document.getElementById('poster-preview');
+  if (currentImageUrl) {
+    preview.innerHTML = `<img src="${currentImageUrl}" alt="Poster" onerror="this.parentElement.innerHTML='<div style=\'padding:20px;text-align:center;color:#aaa;font-size:13px;\'>❌ Gagal load gambar</div>'">`;
+  } else {
+    preview.innerHTML = '<div style="padding:40px; text-align:center; color:#E24B4A; font-size:13px;">❌ Gambar gagal dibuat</div>';
+  }
+}
+
+function showPostStatus(type, msg) {
+  document.getElementById('post-result').innerHTML = `<div class="post-status ${type}">${msg}</div>`;
+}
+
+// =====================
+// MANUAL POST
+// =====================
+async function postToIG() {
+  const token = localStorage.getItem('ap_token');
+  const igId = localStorage.getItem('ap_ig_id');
+  if (!token || !igId) { alert('Atur token di Pengaturan dulu'); return; }
+  if (!currentImageUrl) { alert('Tidak ada gambar'); return; }
+
+  const btn = document.getElementById('post-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Posting...';
+  showPostStatus('loading', '⏳ Memposting ke Instagram...');
+
+  try {
+    await postInstagram(token, igId, currentImageUrl, currentCaption);
+    showPostStatus('success', '✅ Berhasil diposting ke Instagram!');
+    addHistory(document.getElementById('command').value, currentImageUrl, 'posted');
+  } catch(e) {
+    showPostStatus('error', '❌ Gagal: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📸 Post ke Instagram';
+}
+
+// =====================
+// HELPERS
+// =====================
+function setStep(id, state, icon, text) {
+  const item = document.getElementById('step-' + id);
+  const dot = document.getElementById('dot-' + id);
+  const txt = document.getElementById('txt-' + id);
+  item.className = 'step-item ' + state;
+  dot.className = 'step-dot' + (state === 'active' ? ' spinning' : '');
+  dot.textContent = state === 'active' ? '' : icon;
+  txt.textContent = text;
+}
+
+function resetSteps() {
+  ['caption', 'image', 'post'].forEach((s, i) => {
+    setStep(s, '', i+1, ['Generate caption & hashtag', 'Generate poster dengan AI', 'Posting ke Instagram'][i]);
+  });
+}
+
+function finishRun() {
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '🚀 Jalankan';
+}
+
+function downloadPoster() {
+  if (!currentImageUrl) return;
+  const a = document.createElement('a');
+  a.href = currentImageUrl;
+  a.download = 'poster-instagram.jpg';
+  a.target = '_blank';
+  a.click();
+}
+
+function copyCaption() {
+  navigator.clipboard.writeText(currentCaption).then(() => alert('Caption disalin!'));
+}
+
+function editCaption() {
+  const newCaption = prompt('Edit caption:', currentCaption);
+  if (newCaption !== null) {
+    currentCaption = newCaption;
+    document.getElementById('caption-preview').textContent = currentCaption;
+  }
+}
+
+// =====================
+// SETTINGS
+// =====================
+function toggleSettings() {
+  const body = document.getElementById('settings-body');
+  const arrow = document.getElementById('settings-arrow');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+function toggleHistory() {
+  const body = document.getElementById('history-body');
+  const arrow = document.getElementById('history-arrow');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+function toggleToken() {
+  const inp = document.getElementById('access-token');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function saveSettings() {
+  const t = document.getElementById('access-token').value.trim();
+  const id = document.getElementById('ig-id').value.trim();
+  const ak = document.getElementById('anthropic-key').value.trim();
+  if (t) localStorage.setItem('ap_token', t);
+  if (id) localStorage.setItem('ap_ig_id', id);
+  if (ak) localStorage.setItem('ap_anthropic', ak);
+  document.getElementById('settings-status').innerHTML = '<span style="color:#3b6d11">✅ Tersimpan</span>';
+  document.getElementById('conn-status').innerHTML = '<span style="color:#3b6d11">✅ Disimpan!</span>';
+  setTimeout(() => document.getElementById('conn-status').innerHTML = '', 2000);
+}
+
+async function testConn() {
+  const token = document.getElementById('access-token').value.trim() || localStorage.getItem('ap_token');
+  const id = document.getElementById('ig-id').value.trim() || localStorage.getItem('ap_ig_id');
+  const status = document.getElementById('conn-status');
+  if (!token || !id) { status.innerHTML = '<span style="color:#E24B4A">⚠️ Isi token dan ID dulu</span>'; return; }
+  status.innerHTML = '<span class="spinner"></span> Testing...';
+  try {
+    const r = await fetch(`https://graph.facebook.com/v19.0/${id}?fields=name,username&access_token=${token}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    status.innerHTML = `<span style="color:#3b6d11">✅ @${d.username || d.name}</span>`;
+  } catch(e) {
+    status.innerHTML = `<span style="color:#E24B4A">❌ ${e.message}</span>`;
+  }
+}
+
+// =====================
+// HISTORY
+// =====================
+function addHistory(cmd, imgUrl, status) {
+  history.unshift({ cmd, imgUrl, status, time: new Date().toLocaleString('id-ID') });
+  if (history.length > 20) history.pop();
+  localStorage.setItem('ap_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!history.length) {
+    list.innerHTML = '<p style="font-size:13px; color:#aaa; text-align:center; padding:20px;">Belum ada riwayat posting.</p>';
+    return;
+  }
+  list.innerHTML = history.map(h => `
+    <div class="history-item">
+      <img class="history-thumb" src="${h.imgUrl || ''}" onerror="this.style.background='#f0f0f0'; this.src=''" alt="">
+      <div class="history-info">
+        <div class="history-cmd">${h.cmd}</div>
+        <div class="history-time">${h.time}</div>
+      </div>
+      <span class="badge ${h.status === 'posted' ? 'badge-ok' : 'badge-fail'}">${h.status === 'posted' ? '✅ Posted' : '❌ Gagal'}</span>
+    </div>
+  `).join('');
+}
+</script>
+
+</body>
+</html>
