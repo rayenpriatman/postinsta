@@ -211,7 +211,7 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
         </select>
       </div>
       <div class="field" style="margin-bottom:0;">
-        <label>🎵 Background music (bebas copyright)</label>
+        <label>🎵 Background music (Pixabay)</label>
         <select id="reels-music">
           <option value="none">Tanpa musik</option>
           <option value="upbeat" selected>🎶 Upbeat — energik & ceria</option>
@@ -222,7 +222,7 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       </div>
     </div>
     <button class="btn btn-ig btn-full" onclick="runReels()" id="reels-btn">🎬 Generate Video Reels</button>
-    <p style="font-size:11px;color:#aaa;margin-top:8px;">🎵 Musik diambil otomatis dari library bebas copyright — langsung digabung ke video</p>
+    <p style="font-size:11px;color:#aaa;margin-top:8px;">🎵 Musik diambil otomatis dari <strong>Pixabay</strong> — bebas copyright, langsung digabung ke video</p>
   </div>
 
   <div class="progress" id="reels-progress">
@@ -303,6 +303,20 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       <button class="btn btn-dark" onclick="saveSettings()">💾 Simpan</button>
       <button class="btn" onclick="testConn()">🔌 Test koneksi</button>
       <span id="conn-st" style="font-size:12px;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎵 Pixabay API Key (untuk musik Reels)</div>
+    <div class="field">
+      <label>Pixabay API Key</label>
+      <input type="text" id="s-pixabay" placeholder="47900707-xxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      <p class="hint">Daftar gratis di <a href="https://pixabay.com/api/docs/" target="_blank">pixabay.com/api/docs</a> → login → dapat API key. Sudah ada default key bawaan.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-dark" onclick="savePixabay()">💾 Simpan</button>
+      <button class="btn" onclick="testPixabay()">🔌 Test Pixabay</button>
+      <span id="pixabay-st" style="font-size:12px;"></span>
     </div>
   </div>
 
@@ -400,12 +414,12 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic','s-pixabay'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
-  const cn=document.getElementById('s-cloud-name');
-  if(cn&&!cn.value) cn.value='di5bhfcl2';
+  const cn = document.getElementById('s-cloud-name');
+  if(cn && !cn.value) cn.value='di5bhfcl2';
   renderHistory();
   const t=localStorage.getItem('ap_s-token'), id=localStorage.getItem('ap_s-igid');
   if(t&&id) document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Token tersimpan</span>';
@@ -817,72 +831,68 @@ async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType
   const fps=30;
   const totalFrames=slides.length*secPerSlide*fps;
 
-  // === SETUP MUSIK dari URL MP3 bebas copyright ===
+  // === SETUP MUSIK dari Pixabay API ===
   let audioStream = null;
   let audioCtx = null;
 
-  // Daftar musik bebas copyright dari berbagai sumber CDN publik
-  const musicLibrary = {
-    upbeat: [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    ],
-    calm: [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3',
-    ],
-    corporate: [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-    ],
-    inspiring: [
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
-    ],
-  };
-
   if(musicType !== 'none') {
     try {
-      const urls = musicLibrary[musicType] || musicLibrary.upbeat;
-      const randomUrl = urls[Math.floor(Math.random() * urls.length)];
+      const pixabayKey = localStorage.getItem('ap_s-pixabay') || '47900707-a25c32b22a2d3fe83b1dd88be';
 
-      // Download MP3 dan decode ke AudioBuffer
-      const audioData = await fetch(randomUrl).then(r => r.arrayBuffer());
+      // Query sesuai mood
+      const queries = {
+        upbeat: 'upbeat happy energetic',
+        calm: 'calm relaxing peaceful',
+        corporate: 'corporate business professional',
+        inspiring: 'inspiring motivational',
+      };
+      const q = encodeURIComponent(queries[musicType] || queries.upbeat);
+
+      // Fetch musik dari Pixabay
+      const apiRes = await fetch(`https://pixabay.com/api/music/?key=${pixabayKey}&q=${q}&per_page=10&order=popular`);
+      const apiData = await apiRes.json();
+
+      let mp3Url = null;
+      if(apiData.hits && apiData.hits.length > 0) {
+        // Pilih random dari 5 hasil teratas
+        const pick = apiData.hits[Math.floor(Math.random() * Math.min(5, apiData.hits.length))];
+        mp3Url = pick.audio; // URL MP3 langsung
+      }
+
+      if(!mp3Url) throw new Error('Tidak ada musik ditemukan');
+
+      // Download & decode MP3
+      const audioData = await fetch(mp3Url).then(r => r.arrayBuffer());
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioBuffer = await audioCtx.decodeAudioData(audioData);
       const dest = audioCtx.createMediaStreamDestination();
       audioStream = dest.stream;
 
-      // Play audio loop selama durasi video
       const totalDuration = slides.length * secPerSlide;
-      let startTime = audioCtx.currentTime;
       const gainNode = audioCtx.createGain();
-      gainNode.gain.value = 0.4; // Volume 40%
       gainNode.connect(dest);
 
-      // Loop musik kalau video lebih panjang dari musik
+      // Loop musik
       let offset = 0;
+      const startT = audioCtx.currentTime + 0.1;
       while(offset < totalDuration + 2) {
         const src = audioCtx.createBufferSource();
         src.buffer = audioBuffer;
         src.connect(gainNode);
-        src.start(startTime + offset);
+        src.start(startT + offset);
         offset += audioBuffer.duration;
       }
 
       // Fade in & fade out
-      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.5);
-      gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime + totalDuration - 0.5);
-      gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + totalDuration);
+      gainNode.gain.setValueAtTime(0, startT);
+      gainNode.gain.linearRampToValueAtTime(0.5, startT + 0.5);
+      gainNode.gain.setValueAtTime(0.5, startT + totalDuration - 0.8);
+      gainNode.gain.linearRampToValueAtTime(0, startT + totalDuration);
 
     } catch(e) {
-      console.log('Musik gagal dimuat:', e.message);
+      console.log('Pixabay musik gagal:', e.message, '— lanjut tanpa musik');
       audioStream = null;
+      if(audioCtx) { audioCtx.close(); audioCtx = null; }
     }
   }
 
@@ -1056,6 +1066,29 @@ async function testCloudinary() {
     s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`;
   }
 }
+
+function savePixabay() {
+  const v = document.getElementById('s-pixabay').value.trim();
+  if(!v) return;
+  localStorage.setItem('ap_s-pixabay', v);
+  document.getElementById('pixabay-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan!</span>';
+  setTimeout(()=>document.getElementById('pixabay-st').innerHTML='', 2000);
+}
+
+async function testPixabay() {
+  const key = document.getElementById('s-pixabay').value.trim() || localStorage.getItem('ap_s-pixabay') || '47900707-a25c32b22a2d3fe83b1dd88be';
+  const s = document.getElementById('pixabay-st');
+  s.innerHTML='<span class="spinner"></span> Testing...';
+  try {
+    const r = await fetch(`https://pixabay.com/api/music/?key=${key}&q=corporate&per_page=3`);
+    const d = await r.json();
+    if(d.hits && d.hits.length > 0) {
+      s.innerHTML=`<span style="color:#3b6d11">✅ Pixabay OK! ${d.totalHits} lagu tersedia.</span>`;
+      localStorage.setItem('ap_s-pixabay', key);
+    } else throw new Error('Tidak ada hasil');
+  } catch(e) { s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`; }
+}
+
 
 function saveAnthropic() {
   const v = document.getElementById('s-anthropic').value.trim();
