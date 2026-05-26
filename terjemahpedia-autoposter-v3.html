@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Poster Terjemahpedia</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh;}
+.header{background:#fff;border-bottom:1px solid #e5e5e5;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.logo{width:34px;height:34px;background:linear-gradient(135deg,#f09433,#dc2743,#bc1888);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;}
+.header h1{font-size:15px;font-weight:700;}
+.header p{font-size:11px;color:#888;}
+
+/* NAV TABS */
+.nav{display:flex;background:#fff;border-bottom:1px solid #e5e5e5;padding:0 20px;gap:0;position:sticky;top:62px;z-index:99;}
+.nav-tab{flex:1;padding:14px 8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;}
+.nav-tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;}
+.nav-tab:hover:not(.active){color:#555;}
+
+.layout{max-width:760px;margin:0 auto;padding:20px 16px;}
+.section{display:none;}.section.active{display:block;}
+
+/* CARDS */
+.card{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px;margin-bottom:16px;}
+.card-primary{border:2px solid #1a1a1a;}
+.card-title{font-size:13px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;}
+
+/* INPUTS */
+input,textarea,select{width:100%;padding:11px 13px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a1a;outline:none;transition:border-color 0.15s;}
+input:focus,textarea:focus,select:focus{border-color:#1a1a1a;}
+input[type=password]{letter-spacing:2px;}
+textarea{resize:vertical;min-height:70px;line-height:1.6;}
+label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;}
+.field{margin-bottom:13px;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hint{font-size:11px;color:#aaa;margin-top:4px;line-height:1.5;}
+.hint a{color:#185fa5;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;font-size:13px;font-family:inherit;cursor:pointer;border-radius:9px;border:1px solid #e0e0e0;background:#fff;color:#1a1a1a;transition:all 0.15s;font-weight:500;}
+.btn:hover{background:#f5f5f5;}.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-dark{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}.btn-dark:hover{background:#333;}
+.btn-ig{background:linear-gradient(135deg,#f09433,#dc2743,#bc1888);color:#fff;border:none;}
+.btn-ig:hover{opacity:0.9;background:linear-gradient(135deg,#f09433,#dc2743,#bc1888);}
+.btn-full{width:100%;justify-content:center;padding:13px;font-size:15px;font-weight:700;border-radius:10px;}
+
+/* PROGRESS */
+.progress{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:18px;margin-bottom:16px;display:none;}
+.step{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:14px;color:#888;}
+.step.done{color:#3b6d11;}.step.active{color:#1a1a1a;font-weight:500;}.step.err{color:#E24B4A;}
+.step-dot{width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.step-dot.spin{border-top-color:transparent;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* RESULT */
+.result{background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;margin-bottom:16px;display:none;}
+.result-head{padding:14px 18px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;justify-content:space-between;}
+.result-head h3{font-size:14px;font-weight:700;}
+.result-body{padding:18px;}
+.media-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.media-box{border-radius:10px;overflow:hidden;background:#f0f0f0;min-height:160px;display:flex;align-items:center;justify-content:center;}
+.media-box img,.media-box video{width:100%;display:block;border-radius:8px;}
+.caption-box{font-size:13px;line-height:1.7;color:#333;white-space:pre-wrap;background:#f8f8f6;border-radius:8px;padding:12px;max-height:260px;overflow-y:auto;}
+.status-box{border-radius:10px;padding:12px 14px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;margin-top:14px;}
+.status-ok{background:#eaf3de;color:#3b6d11;}.status-err{background:#fcebeb;color:#a32d2d;}.status-load{background:#f0f0f0;color:#555;}
+.result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;}
+
+/* VIDEO */
+.video-wrap{position:relative;border-radius:10px;overflow:hidden;background:#000;}
+.video-wrap video{width:100%;display:block;max-height:300px;object-fit:contain;}
+.video-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700;}
+
+/* REELS SPECIAL */
+.reels-hero{background:linear-gradient(135deg,#f09433,#dc2743,#bc1888);border-radius:14px;padding:20px;margin-bottom:16px;color:#fff;}
+.reels-hero h2{font-size:20px;font-weight:800;margin-bottom:4px;}
+.reels-hero p{font-size:13px;opacity:0.85;}
+.reels-steps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.reels-step{background:rgba(255,255,255,0.15);border-radius:10px;padding:12px;font-size:13px;}
+.reels-step .num{font-size:22px;font-weight:800;margin-bottom:4px;}
+
+/* HISTORY */
+.history-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;}
+.history-item:last-child{border-bottom:none;}
+.history-thumb{width:42px;height:42px;border-radius:8px;object-fit:cover;background:#f0f0f0;flex-shrink:0;}
+.history-info{flex:1;min-width:0;}
+.history-cmd{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.history-time{font-size:11px;color:#888;}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.b-ok{background:#eaf3de;color:#3b6d11;}.b-fail{background:#fcebeb;color:#a32d2d;}.b-reel{background:#e8f0fe;color:#1a56db;}
+
+.spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@media(max-width:520px){.media-grid{grid-template-columns:1fr;}.row{grid-template-columns:1fr;}.reels-steps{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">📸</div>
+  <div><h1>Auto Poster Terjemahpedia</h1><p>Generate konten & posting otomatis ke Instagram</p></div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav">
+  <button class="nav-tab active" onclick="switchTab('feed',this)">🖼️ Feed</button>
+  <button class="nav-tab" onclick="switchTab('reels',this)">🎬 Reels</button>
+  <button class="nav-tab" onclick="switchTab('history',this)">📋 Riwayat</button>
+  <button class="nav-tab" onclick="switchTab('settings',this)">⚙️ Pengaturan</button>
+</div>
+
+<div class="layout">
+
+<!-- ===================== TAB FEED ===================== -->
+<div id="tab-feed" class="section active">
+  <div class="card card-primary">
+    <div class="card-title">✍️ Buat Konten Feed</div>
+    <div class="field">
+      <label>Perintah konten</label>
+      <input type="text" id="feed-cmd" placeholder="buat poster terjemahpedia jasa terjemah no kontak 082323963884" onkeydown="if(event.key==='Enter')runFeed()">
+    </div>
+    <button class="btn btn-ig btn-full" onclick="runFeed()" id="feed-btn">🚀 Generate & Post ke Feed</button>
+    <p class="hint" style="margin-top:8px;">Poster akan di-generate otomatis dengan desain random dan diposting ke Feed Instagram.</p>
+  </div>
+
+  <div class="progress" id="feed-progress">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">⚙️ Memproses...</div>
+    <div class="step" id="fs-caption"><div class="step-dot" id="fd-caption">1</div><span id="ft-caption">Generate caption & hashtag</span></div>
+    <div class="step" id="fs-poster"><div class="step-dot" id="fd-poster">2</div><span id="ft-poster">Buat poster</span></div>
+    <div class="step" id="fs-upload"><div class="step-dot" id="fd-upload">3</div><span id="ft-upload">Upload gambar</span></div>
+    <div class="step" id="fs-post"><div class="step-dot" id="fd-post">4</div><span id="ft-post">Posting ke Feed Instagram</span></div>
+  </div>
+
+  <div class="result" id="feed-result">
+    <div class="result-head"><h3>✅ Hasil Feed</h3><span id="feed-badge"></span></div>
+    <div class="result-body">
+      <div class="media-grid">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">🖼️ POSTER FEED (1:1)</div>
+          <div class="media-box" id="feed-preview"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn" style="flex:1;justify-content:center;" onclick="dlFeed()">⬇️ Download</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">📝 CAPTION & HASHTAG</div>
+          <div class="caption-box" id="feed-caption"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn" style="flex:1;justify-content:center;" onclick="copyFeedCaption()">📋 Salin</button>
+          </div>
+        </div>
+      </div>
+      <div id="feed-status"></div>
+      <div class="result-actions">
+        <button class="btn btn-ig" onclick="manualPostFeed()" id="feed-post-btn" style="display:none;">📸 Post ke Feed</button>
+        <button class="btn" onclick="runFeed()">🔄 Generate ulang</button>
+        <button class="btn" onclick="editFeedCaption()">✏️ Edit caption</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB REELS ===================== -->
+<div id="tab-reels" class="section">
+  <div class="reels-hero">
+    <h2>🎬 Buat Video Reels</h2>
+    <p>Generate video slide otomatis → download → post ke Reels Instagram</p>
+    <div class="reels-steps">
+      <div class="reels-step"><div class="num">1️⃣</div>Ketik perintah & klik Generate</div>
+      <div class="reels-step"><div class="num">2️⃣</div>Preview & download video</div>
+      <div class="reels-step"><div class="num">3️⃣</div>Klik "Post ke Reels" otomatis</div>
+      <div class="reels-step"><div class="num">4️⃣</div>Atau upload manual ke HP</div>
+    </div>
+  </div>
+
+  <div class="card card-primary">
+    <div class="card-title">🎬 Buat Video Reels</div>
+    <div class="field">
+      <label>Perintah konten</label>
+      <input type="text" id="reels-cmd" placeholder="video terjemahpedia jasa terjemah no kontak 082323963884" onkeydown="if(event.key==='Enter')runReels()">
+    </div>
+    <div class="row" style="margin-bottom:14px;">
+      <div class="field" style="margin-bottom:0;">
+        <label>Jumlah slide</label>
+        <select id="reels-slides">
+          <option value="3">3 slide (~6 detik)</option>
+          <option value="4" selected>4 slide (~8 detik)</option>
+          <option value="5">5 slide (~10 detik)</option>
+          <option value="6">6 slide (~12 detik)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Tema warna</label>
+        <select id="reels-theme">
+          <option value="random">🎲 Random setiap kali</option>
+          <option value="navy">🔵 Navy + Gold</option>
+          <option value="green">🟢 Hijau + Gold</option>
+          <option value="red">🔴 Merah + Gold</option>
+          <option value="purple">🟣 Ungu + Gold</option>
+          <option value="dark">⚫ Gelap + Orange</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-ig btn-full" onclick="runReels()" id="reels-btn">🎬 Generate Video Reels</button>
+  </div>
+
+  <div class="progress" id="reels-progress">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;">⚙️ Membuat video...</div>
+    <div class="step" id="rs-caption"><div class="step-dot" id="rd-caption">1</div><span id="rt-caption">Generate caption & hashtag</span></div>
+    <div class="step" id="rs-video"><div class="step-dot" id="rd-video">2</div><span id="rt-video">Render video slide (30-60 detik)</span></div>
+    <div class="step" id="rs-upload"><div class="step-dot" id="rd-upload">3</div><span id="rt-upload">Upload video</span></div>
+    <div class="step" id="rs-post"><div class="step-dot" id="rd-post">4</div><span id="rt-post">Posting ke Reels Instagram</span></div>
+  </div>
+
+  <div class="result" id="reels-result">
+    <div class="result-head"><h3>✅ Video Reels Siap</h3><span class="badge b-reel">🎬 Reels 9:16</span></div>
+    <div class="result-body">
+      <div class="media-grid">
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">🎬 VIDEO REELS (9:16)</div>
+          <div class="video-wrap" id="reels-preview"><div style="padding:40px;text-align:center;color:#aaa;">Generating...</div></div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-dark" style="flex:1;justify-content:center;" onclick="dlReels()">⬇️ Download MP4</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">📝 CAPTION & HASHTAG</div>
+          <div class="caption-box" id="reels-caption"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn" style="flex:1;justify-content:center;" onclick="copyReelsCaption()">📋 Salin</button>
+          </div>
+          <div style="background:#fffbea;border:1px solid #f5d367;border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#7a5c00;line-height:1.6;">
+            <strong>📱 Cara post Reels manual:</strong><br>
+            1. Download video di atas<br>
+            2. Buka Instagram di HP<br>
+            3. Klik + → Reels → pilih video<br>
+            4. Paste caption → Share
+          </div>
+        </div>
+      </div>
+      <div id="reels-status"></div>
+      <div class="result-actions">
+        <button class="btn btn-ig" onclick="manualPostReels()" id="reels-post-btn" style="display:none;">🎬 Post ke Reels</button>
+        <button class="btn" onclick="runReels()">🔄 Generate ulang</button>
+        <button class="btn" onclick="editReelsCaption()">✏️ Edit caption</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB HISTORY ===================== -->
+<div id="tab-history" class="section">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="card-title" style="margin-bottom:0;">📋 Riwayat Posting</div>
+      <button class="btn" onclick="clearHistory()" style="font-size:12px;">🗑️ Hapus semua</button>
+    </div>
+    <div id="history-list"><p style="font-size:13px;color:#aaa;text-align:center;padding:20px;">Belum ada riwayat.</p></div>
+  </div>
+</div>
+
+<!-- ===================== TAB SETTINGS ===================== -->
+<div id="tab-settings" class="section">
+  <div class="card">
+    <div class="card-title">🔐 Meta Graph API</div>
+    <div class="row">
+      <div class="field">
+        <label>Access Token</label>
+        <div style="display:flex;gap:6px;">
+          <input type="password" id="s-token" placeholder="EAAxxxxx..." style="flex:1;">
+          <button class="btn" style="padding:9px;" onclick="toggleTok()">👁️</button>
+        </div>
+        <p class="hint"><a href="https://developers.facebook.com/tools/explorer/" target="_blank">Meta Graph API Explorer</a></p>
+      </div>
+      <div class="field">
+        <label>Instagram Account ID</label>
+        <input type="text" id="s-igid" placeholder="17841415432256853">
+        <p class="hint">17 digit dari Meta Business Suite</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-dark" onclick="saveSettings()">💾 Simpan</button>
+      <button class="btn" onclick="testConn()">🔌 Test koneksi</button>
+      <span id="conn-st" style="font-size:12px;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🖼️ Upload Foto (ImgBB — gratis)</div>
+    <div class="field">
+      <label>ImgBB API Key</label>
+      <input type="password" id="s-imgbb" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      <p class="hint">Daftar gratis di <a href="https://api.imgbb.com" target="_blank">api.imgbb.com</a> → Get API key</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎬 Upload Video Reels (Catbox.moe — gratis, tanpa daftar)</div>
+    <div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:8px;padding:12px;font-size:13px;color:#1a4a8a;margin-bottom:12px;line-height:1.7;">
+      ✅ <strong>Catbox.moe gratis selamanya</strong> — tidak perlu daftar, tidak perlu API key.<br>
+      Video otomatis diupload dan dapat URL publik untuk posting ke Reels.
+    </div>
+    <p class="hint">Tidak ada yang perlu diisi — sudah otomatis! 🎉</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📖 Panduan Setup</div>
+    <ol style="font-size:13px;color:#555;padding-left:1.3rem;line-height:2.2;">
+      <li>Isi <strong>Access Token</strong> dari Meta Graph API Explorer</li>
+      <li>Isi <strong>Instagram Account ID</strong> (17 digit) dari Meta Business Suite</li>
+      <li>Daftar <a href="https://api.imgbb.com" target="_blank" style="color:#185fa5;">ImgBB</a> → isi API key untuk posting foto</li>
+      <li>Video Reels → upload otomatis via Catbox.moe (tanpa setup)</li>
+      <li>Klik <strong>Simpan</strong> → Test koneksi → siap!</li>
+    </ol>
+  </div>
+</div>
+
+</div><!-- end layout -->
+
+<script>
+// ===================== STATE =====================
+let feedCaption='', feedImageUrl='';
+let reelsCaption='', reelsBlobUrl='';
+let historyItems = JSON.parse(localStorage.getItem('ap_hist_v3')||'[]');
+
+// ===================== TABS =====================
+function switchTab(name, el) {
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ===================== LOAD SETTINGS =====================
+window.onload = () => {
+  ['s-token','s-igid','s-imgbb'].forEach(id=>{
+    const v=localStorage.getItem('ap_'+id); if(v) document.getElementById(id).value=v;
+  });
+  renderHistory();
+  const t=localStorage.getItem('ap_s-token'), id=localStorage.getItem('ap_s-igid');
+  if(t&&id) document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Token tersimpan</span>';
+};
+
+// ===================== FEED =====================
+async function runFeed() {
+  const cmd = document.getElementById('feed-cmd').value.trim();
+  if(!cmd){alert('Masukkan perintah terlebih dahulu');return;}
+  const token=localStorage.getItem('ap_s-token'), igId=localStorage.getItem('ap_s-igid');
+
+  document.getElementById('feed-progress').style.display='block';
+  document.getElementById('feed-result').style.display='none';
+  document.getElementById('feed-status').innerHTML='';
+  setBtnLoad('feed-btn','⏳ Memproses...');
+  resetSteps('f');
+  feedCaption=''; feedImageUrl='';
+
+  // Step 1: Caption
+  setStep('fs-caption','fd-caption','ft-caption','active','⏳','Generating caption...');
+  try{ feedCaption=await genCaption(cmd,'feed'); setStep('fs-caption','fd-caption','ft-caption','done','✓','Caption selesai'); }
+  catch(e){ setStep('fs-caption','fd-caption','ft-caption','err','✗','Gagal: '+e.message); resetBtn('feed-btn','🚀 Generate & Post ke Feed'); return; }
+
+  // Step 2: Poster
+  setStep('fs-poster','fd-poster','ft-poster','active','⏳','Membuat poster...');
+  try{ feedImageUrl=await genImage(cmd); setStep('fs-poster','fd-poster','ft-poster','done','✓','Poster selesai'); }
+  catch(e){ setStep('fs-poster','fd-poster','ft-poster','err','✗','Gagal: '+e.message); }
+
+  showFeedResult();
+
+  // Step 3 & 4: Upload + Post
+  if(token && igId && feedImageUrl) {
+    setStep('fs-upload','fd-upload','ft-upload','active','⏳','Upload gambar...');
+    let pubUrl = feedImageUrl;
+    try{
+      if(feedImageUrl.startsWith('data:')) pubUrl = await uploadImgBB(feedImageUrl);
+      feedImageUrl = pubUrl; showFeedResult();
+      setStep('fs-upload','fd-upload','ft-upload','done','✓','Upload selesai');
+    }catch(e){ setStep('fs-upload','fd-upload','ft-upload','err','✗','Gagal upload: '+e.message); document.getElementById('feed-post-btn').style.display='inline-flex'; resetBtn('feed-btn','🚀 Generate & Post ke Feed'); return; }
+
+    setStep('fs-post','fd-post','ft-post','active','⏳','Posting ke Feed...');
+    try{
+      await postIG(token,igId,pubUrl,feedCaption,'photo');
+      setStep('fs-post','fd-post','ft-post','done','✓','Berhasil diposting ke Feed! 🎉');
+      document.getElementById('feed-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Feed Instagram!</div>';
+      addHistory(cmd,feedImageUrl,'posted','feed');
+    }catch(e){
+      setStep('fs-post','fd-post','ft-post','err','✗','Gagal: '+e.message);
+      document.getElementById('feed-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'</div>';
+      document.getElementById('feed-post-btn').style.display='inline-flex';
+      addHistory(cmd,feedImageUrl,'failed','feed');
+    }
+  } else {
+    setStep('fs-upload','fd-upload','ft-upload','err','!','Skip');
+    setStep('fs-post','fd-post','ft-post','err','!',token?'Atur token di Pengaturan':'Token belum diatur');
+    if(!token||!igId) document.getElementById('feed-status').innerHTML='<div class="status-box status-err">⚠️ Atur Access Token & Account ID di tab Pengaturan</div>';
+    document.getElementById('feed-post-btn').style.display=(token&&igId)?'inline-flex':'none';
+  }
+  resetBtn('feed-btn','🚀 Generate & Post ke Feed');
+}
+
+function showFeedResult() {
+  document.getElementById('feed-result').style.display='block';
+  document.getElementById('feed-caption').textContent=feedCaption;
+  if(feedImageUrl) document.getElementById('feed-preview').innerHTML=`<img src="${feedImageUrl}" alt="Poster">`;
+}
+
+async function manualPostFeed() {
+  const token=localStorage.getItem('ap_s-token'), igId=localStorage.getItem('ap_s-igid');
+  if(!token||!igId){alert('Atur token di Pengaturan');return;}
+  const btn=document.getElementById('feed-post-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Posting...';
+  document.getElementById('feed-status').innerHTML='<div class="status-box status-load">⏳ Memposting...</div>';
+  try{
+    await postIG(token,igId,feedImageUrl,feedCaption,'photo');
+    document.getElementById('feed-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Feed!</div>';
+    addHistory(document.getElementById('feed-cmd').value,feedImageUrl,'posted','feed');
+  }catch(e){ document.getElementById('feed-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'</div>'; }
+  btn.disabled=false; btn.innerHTML='📸 Post ke Feed';
+}
+
+function dlFeed(){ if(!feedImageUrl)return; const a=document.createElement('a');a.href=feedImageUrl;a.download='poster-feed.jpg';a.click(); }
+function copyFeedCaption(){ navigator.clipboard.writeText(feedCaption).then(()=>alert('Caption disalin!')); }
+function editFeedCaption(){ const n=prompt('Edit caption:',feedCaption);if(n!==null){feedCaption=n;document.getElementById('feed-caption').textContent=n;} }
+
+// ===================== REELS =====================
+async function runReels() {
+  const cmd = document.getElementById('reels-cmd').value.trim();
+  if(!cmd){alert('Masukkan perintah terlebih dahulu');return;}
+  const token=localStorage.getItem('ap_s-token'), igId=localStorage.getItem('ap_s-igid');
+  const slideCount=parseInt(document.getElementById('reels-slides').value);
+  const themeKey=document.getElementById('reels-theme').value;
+
+  document.getElementById('reels-progress').style.display='block';
+  document.getElementById('reels-result').style.display='none';
+  document.getElementById('reels-status').innerHTML='';
+  setBtnLoad('reels-btn','⏳ Membuat video...');
+  resetSteps('r');
+  reelsCaption=''; reelsBlobUrl='';
+
+  // Step 1: Caption
+  setStep('rs-caption','rd-caption','rt-caption','active','⏳','Generating caption...');
+  try{ reelsCaption=await genCaption(cmd,'reels'); setStep('rs-caption','rd-caption','rt-caption','done','✓','Caption selesai'); }
+  catch(e){ setStep('rs-caption','rd-caption','rt-caption','err','✗','Gagal: '+e.message); resetBtn('reels-btn','🎬 Generate Video Reels'); return; }
+
+  // Step 2: Video
+  setStep('rs-video','rd-video','rt-video','active','⏳','Render video slide...');
+  try{
+    reelsBlobUrl=await genReelsVideo(cmd,slideCount,themeKey);
+    setStep('rs-video','rd-video','rt-video','done','✓','Video selesai');
+  }catch(e){ setStep('rs-video','rd-video','rt-video','err','✗','Gagal render: '+e.message); resetBtn('reels-btn','🎬 Generate Video Reels'); return; }
+
+  showReelsResult();
+
+  // Step 3 & 4: Upload + Post
+  if(token && igId) {
+    setStep('rs-upload','rd-upload','rt-upload','active','⏳','Upload ke Catbox.moe...');
+    let pubUrl='';
+    try{
+      pubUrl = await uploadCatbox(reelsBlobUrl);
+      setStep('rs-upload','rd-upload','rt-upload','done','✓','Upload selesai: '+pubUrl.slice(0,40)+'...');
+    }catch(e){
+      setStep('rs-upload','rd-upload','rt-upload','err','✗','Gagal upload: '+e.message);
+      document.getElementById('reels-status').innerHTML='<div class="status-box status-err">❌ Upload gagal. Download video dan upload manual ke Instagram.</div>';
+      document.getElementById('reels-post-btn').style.display='none';
+      resetBtn('reels-btn','🎬 Generate Video Reels'); return;
+    }
+
+    setStep('rs-post','rd-post','rt-post','active','⏳','Posting ke Reels...');
+    try{
+      await postIG(token,igId,pubUrl,reelsCaption,'video');
+      setStep('rs-post','rd-post','rt-post','done','✓','Berhasil diposting ke Reels! 🎉');
+      document.getElementById('reels-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Reels Instagram!</div>';
+      addHistory(cmd,'',  'posted','reels');
+    }catch(e){
+      setStep('rs-post','rd-post','rt-post','err','✗','Gagal: '+e.message);
+      document.getElementById('reels-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'. Coba download dan upload manual.</div>';
+      document.getElementById('reels-post-btn').style.display='none';
+      addHistory(cmd,'','failed','reels');
+    }
+  } else {
+    setStep('rs-upload','rd-upload','rt-upload','err','!','Token belum diatur');
+    setStep('rs-post','rd-post','rt-post','err','!','Atur token di Pengaturan');
+    document.getElementById('reels-status').innerHTML='<div class="status-box status-err">⚠️ Atur token di Pengaturan, atau download video dan upload manual ke Instagram.</div>';
+  }
+
+  resetBtn('reels-btn','🎬 Generate Video Reels');
+}
+
+function showReelsResult() {
+  document.getElementById('reels-result').style.display='block';
+  document.getElementById('reels-caption').textContent=reelsCaption;
+  if(reelsBlobUrl) {
+    document.getElementById('reels-preview').innerHTML=`<video src="${reelsBlobUrl}" controls autoplay muted loop style="width:100%;max-height:300px;object-fit:contain;"></video><div class="video-badge">📱 9:16 REELS</div>`;
+  }
+}
+
+async function manualPostReels() {
+  const token=localStorage.getItem('ap_s-token'), igId=localStorage.getItem('ap_s-igid');
+  if(!token||!igId){alert('Atur token di Pengaturan');return;}
+  const btn=document.getElementById('reels-post-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Uploading & Posting...';
+  document.getElementById('reels-status').innerHTML='<div class="status-box status-load">⏳ Upload & posting Reels...</div>';
+  try{
+    const pubUrl=await uploadCatbox(reelsBlobUrl);
+    await postIG(token,igId,pubUrl,reelsCaption,'video');
+    document.getElementById('reels-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Reels!</div>';
+    addHistory(document.getElementById('reels-cmd').value,'','posted','reels');
+  }catch(e){ document.getElementById('reels-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'</div>'; }
+  btn.disabled=false; btn.innerHTML='🎬 Post ke Reels';
+}
+
+function dlReels(){
+  if(!reelsBlobUrl)return;
+  const a=document.createElement('a'); a.href=reelsBlobUrl; a.download='reels-terjemahpedia.webm'; a.click();
+}
+function copyReelsCaption(){ navigator.clipboard.writeText(reelsCaption).then(()=>alert('Caption disalin!')); }
+function editReelsCaption(){ const n=prompt('Edit caption:',reelsCaption);if(n!==null){reelsCaption=n;document.getElementById('reels-caption').textContent=n;} }
+
+// ===================== GENERATE CAPTION =====================
+async function genCaption(cmd, type) {
+  const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
+  const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
+  const isDoc=cmd.toLowerCase().includes('dokumen')||cmd.toLowerCase().includes('resmi');
+  const isMulti=cmd.toLowerCase().includes('multibahasa');
+  const v=Math.floor(Math.random()*5);
+
+  const hashtags=isDoc
+    ?'#terjemahpedia #jasaterjemah #terjemahdokumen #terjemahresmi #translasidokumen #terjemahtersumpah #legalisirdokumen #terjemahprofesional #translationservice #jasaterjemahindonesia #terjemahmurah #terjemahcepat #dokumenresmi #translasi #terjemahakurat'
+    :isMulti
+    ?'#terjemahpedia #jasaterjemah #terjemahmultibahasa #terjemaharab #terjemahinggris #terjemahmandarin #terjemahjepang #terjemahkorea #translasi #terjemahprofesional #jasaterjemahindonesia #terjemahmurah #translationservice #multibahasa #terjemahcepat'
+    :'#terjemahpedia #jasaterjemah #terjemahan #translasi #terjemahprofesional #jasaterjemahmurah #terjemahdokumen #translationservice #jasaterjemahindonesia #terjemahresmi #terjemahcepat #terjemahakurat #jasatranslasi #terjemahmurah #reels';
+
+  const openings=diskon
+    ?[`🔥 PROMO SPESIAL! Diskon ${diskon}% untuk semua layanan Terjemahpedia!`,`⚡ JANGAN LEWATKAN! Terjemahpedia hadir dengan diskon ${diskon}% untuk Anda!`,`🎉 PROMO TERBATAS! Hemat ${diskon}% bersama Terjemahpedia sekarang!`,`💥 PENAWARAN EKSKLUSIF! Diskon ${diskon}% dari Terjemahpedia!`,`🌟 HEMAT ${diskon}%! Layanan terjemahan premium harga spesial!`]
+    :isDoc
+    ?[`📄 Butuh terjemahan dokumen resmi yang akurat? Terjemahpedia solusinya!`,`✅ Terjemahpedia — ahli terjemahan dokumen resmi, ijazah, akta & kontrak!`,`🏆 Dokumen penting butuh terjemahan tersumpah? Percayakan ke Terjemahpedia!`,`📋 Terjemahpedia siap menangani semua kebutuhan terjemahan dokumen Anda!`,`🎯 Terjemahan dokumen akurat dan tersumpah? Terjemahpedia jawabannya!`]
+    :[`🌍 Bahasa bukan penghalang bersama Terjemahpedia!`,`✨ Terjemahpedia — jembatan komunikasi lintas bahasa yang terpercaya!`,`🚀 Butuh terjemahan cepat dan akurat? Terjemahpedia siap membantu!`,`💼 Tingkatkan profesionalisme dengan layanan terjemahan premium Terjemahpedia!`,`🌟 Terjemahpedia — mitra terpercaya untuk semua kebutuhan terjemahan Anda!`];
+
+  const middles=[
+    `Kami melayani terjemahan dokumen, konten bisnis, dan berbagai kebutuhan bahasa dengan dedikasi penuh.`,
+    `Tim penerjemah berpengalaman kami memastikan setiap kata diterjemahkan tepat dan natural sesuai konteks.`,
+    `Dengan pengalaman bertahun-tahun, kami memahami pentingnya ketepatan dan kerahasiaan dalam terjemahan.`,
+    `Kami berkomitmen memberikan hasil terjemahan terbaik — akurat, tepat waktu, dan harga kompetitif.`,
+    `Layanan kami mencakup berbagai bahasa dan jenis dokumen, siap mendukung kebutuhan Anda kapanpun.`
+  ];
+
+  const ctas=[
+    `📲 Hubungi kami sekarang di ${phone}!`,
+    `💬 Chat ke ${phone} untuk konsultasi GRATIS!`,
+    `📞 Hubungi ${phone} & dapatkan penawaran terbaik!`,
+    `✉️ WhatsApp ${phone} — siap melayani Anda!`,
+    `🤝 Percayakan terjemahan Anda! Hubungi ${phone}`
+  ];
+
+  const reelsIntro = type==='reels' ? '🎬 Tonton sampai habis!\n\n' : '';
+  return `${reelsIntro}${openings[v]}\n\n${middles[v]}\n\n${ctas[v]}\n\n${hashtags}`;
+}
+
+// ===================== GENERATE IMAGE (Canvas Random) =====================
+async function genImage(cmd) {
+  const canvas=document.createElement('canvas'); canvas.width=1080; canvas.height=1080;
+  const ctx=canvas.getContext('2d');
+  const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
+  const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
+  const isDoc=cmd.toLowerCase().includes('dokumen')||cmd.toLowerCase().includes('resmi');
+  const isMulti=cmd.toLowerCase().includes('multibahasa');
+  const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+  const themes=[
+    {bg1:'#0d1b4b',bg2:'#1a3a7c',acc:'#F5A623',acc2:'#E8860A'},
+    {bg1:'#1a3a1a',bg2:'#2d5a2d',acc:'#FFD700',acc2:'#FFA500'},
+    {bg1:'#4a0a0a',bg2:'#8b1a1a',acc:'#FFD700',acc2:'#FF8C00'},
+    {bg1:'#0a2a4a',bg2:'#0d4f8c',acc:'#00E5FF',acc2:'#00B8D4'},
+    {bg1:'#2a0a4a',bg2:'#5c1a8c',acc:'#FFD700',acc2:'#FF69B4'},
+    {bg1:'#1a1a1a',bg2:'#3a3a3a',acc:'#F5A623',acc2:'#FFD700'},
+    {bg1:'#003333',bg2:'#006666',acc:'#FFD700',acc2:'#ADFF2F'},
+    {bg1:'#1a0a00',bg2:'#4a2000',acc:'#FFD700',acc2:'#FF6347'},
+    {bg1:'#000d1a',bg2:'#001a33',acc:'#00FF88',acc2:'#00CCFF'},
+    {bg1:'#1a001a',bg2:'#3d003d',acc:'#FF69B4',acc2:'#FFD700'},
+  ];
+  const t=themes[rand(0,themes.length-1)]; const layout=rand(0,4);
+
+  const bgs=[
+    ()=>{const g=ctx.createLinearGradient(0,0,1080,1080);g.addColorStop(0,t.bg1);g.addColorStop(1,t.bg2);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1080);},
+    ()=>{const g=ctx.createRadialGradient(540,540,0,540,540,800);g.addColorStop(0,t.bg2);g.addColorStop(1,t.bg1);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1080);},
+    ()=>{const g=ctx.createLinearGradient(0,0,1080,0);g.addColorStop(0,t.bg1);g.addColorStop(0.5,t.bg2);g.addColorStop(1,t.bg1);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1080);},
+  ];
+  bgs[rand(0,2)]();
+
+  ctx.globalAlpha=0.07;ctx.fillStyle='#fff';
+  const decs=[
+    ()=>{ctx.beginPath();ctx.arc(950,150,320,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(80,920,260,0,Math.PI*2);ctx.fill();},
+    ()=>{ctx.beginPath();ctx.arc(1080,0,400,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(0,1080,350,0,Math.PI*2);ctx.fill();},
+    ()=>{for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(rand(0,1080),rand(0,1080),rand(80,200),0,Math.PI*2);ctx.fill();}},
+    ()=>{ctx.beginPath();ctx.arc(540,540,460,0,Math.PI*2);ctx.fill();},
+    ()=>{ctx.fillRect(0,400,1080,6);ctx.beginPath();ctx.arc(900,200,250,0,Math.PI*2);ctx.fill();},
+  ];
+  decs[rand(0,4)]();ctx.globalAlpha=1;
+
+  const ag=ctx.createLinearGradient(0,0,1080,0);ag.addColorStop(0,t.acc);ag.addColorStop(1,t.acc2);
+  ctx.fillStyle=ag;ctx.fillRect(0,0,1080,12);
+
+  const layanan=isDoc?['📄 Dokumen Resmi','✅ Tersumpah','🌐 Multibahasa','⚡ Cepat']:isMulti?['🌐 Inggris & Arab','🇯🇵 Jepang & Korea','🇨🇳 Mandarin','⚡ Cepat']:['📄 Terjemah Dokumen','🌐 Multibahasa','⚡ Cepat & Tepat','✅ Resmi'];
+
+  if(layout===0){
+    ctx.fillStyle=t.acc;rr(ctx,60,55,340,65,32);ctx.fillStyle=t.bg1;ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.fillText('✦ TERJEMAHPEDIA ✦',230,97);
+    dg(ctx,840,210,130,t.acc);
+    if(diskon){ctx.fillStyle=t.acc;ctx.font='bold 90px Arial';ctx.textAlign='left';ctx.fillText('DISKON',60,270);ctx.fillStyle='#fff';ctx.font='bold 180px Arial';ctx.fillText(diskon+'%',60,450);ctx.fillStyle=t.acc;ctx.font='bold 65px Arial';ctx.fillText('SPESIAL!',60,520);}
+    else{ctx.fillStyle='#fff';ctx.font='bold 85px Arial';ctx.textAlign='left';ctx.fillText('JASA',60,270);ctx.fillStyle=t.acc;ctx.font='bold 115px Arial';ctx.fillText('TERJEMAH',60,390);ctx.fillStyle='#fff';ctx.font='bold 55px Arial';ctx.fillText('PROFESIONAL',60,460);}
+    const lg=ctx.createLinearGradient(60,0,700,0);lg.addColorStop(0,t.acc);lg.addColorStop(1,'transparent');ctx.fillStyle=lg;ctx.fillRect(60,490,650,4);
+    ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='31px Arial';ctx.textAlign='left';ctx.fillText('Solusi terjemahan terpercaya untuk',60,545);ctx.fillText('bisnis dan kebutuhan pribadi Anda.',60,585);
+    ctx.fillStyle='rgba(255,255,255,0.08)';rr(ctx,60,620,960,230,20);
+    ctx.fillStyle=t.acc;ctx.font='bold 30px Arial';ctx.fillText('LAYANAN KAMI',90,668);
+    layanan.forEach((item,i)=>{ctx.fillStyle='#fff';ctx.font='27px Arial';ctx.fillText(item,90+(i%2)*490,705+Math.floor(i/2)*62);});
+    ['✓ Akurat','✓ Profesional','✓ Terpercaya','✓ Rahasia'].forEach((b,i)=>{ctx.fillStyle=t.acc;ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText(b,150+i*240,910);});
+  } else if(layout===1){
+    ctx.fillStyle=t.acc;ctx.globalAlpha=0.9;ctx.fillRect(720,0,360,1080);ctx.globalAlpha=1;
+    ctx.fillStyle='#fff';ctx.font='bold 30px Arial';ctx.textAlign='left';ctx.fillText('TERJEMAHPEDIA',40,80);ctx.fillStyle=t.acc;ctx.fillRect(40,92,300,4);
+    if(diskon){ctx.fillStyle=t.acc;ctx.font='bold 70px Arial';ctx.fillText('DISKON',40,220);ctx.fillStyle='#fff';ctx.font='bold 160px Arial';ctx.fillText(diskon+'%',40,390);}
+    else{ctx.fillStyle='#fff';ctx.font='bold 75px Arial';ctx.fillText('JASA',40,220);ctx.fillStyle=t.acc;ctx.font='bold 90px Arial';ctx.fillText('TERJEMAH',40,320);ctx.fillStyle='#fff';ctx.font='bold 48px Arial';ctx.fillText('PROFESIONAL',40,390);}
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='28px Arial';ctx.fillText('Terjemahan berkualitas',40,450);ctx.fillText('untuk semua kebutuhan.',40,490);
+    layanan.forEach((item,i)=>{ctx.fillStyle=t.acc;ctx.font='bold 26px Arial';ctx.fillText('▸',40,580+i*58);ctx.fillStyle='#fff';ctx.font='24px Arial';ctx.fillText(item.replace(/[^\w\s]/g,'').trim(),70,580+i*58);});
+    ctx.fillStyle=t.bg1;ctx.font='bold 28px Arial';ctx.textAlign='center';ctx.fillText('HUBUNGI',900,380);ctx.fillText(phone.slice(0,7),900,440);ctx.fillText(phone.slice(7),900,480);dg(ctx,900,650,90,'#fff');
+  } else if(layout===2){
+    ctx.textAlign='center';ctx.fillStyle=t.acc;ctx.font='bold 34px Arial';ctx.fillText('✦ TERJEMAHPEDIA ✦',540,120);ctx.fillStyle=t.acc;ctx.fillRect(180,138,720,4);
+    if(diskon){ctx.fillStyle='#fff';ctx.font='bold 80px Arial';ctx.fillText('PROMO',540,260);ctx.fillStyle=t.acc;ctx.font='bold 200px Arial';ctx.fillText(diskon+'%',540,470);ctx.fillStyle='#fff';ctx.font='bold 55px Arial';ctx.fillText('DISKON TERBATAS!',540,560);}
+    else{ctx.fillStyle='#fff';ctx.font='bold 75px Arial';ctx.fillText('JASA TERJEMAH',540,250);ctx.fillStyle=t.acc;ctx.font='bold 120px Arial';ctx.fillText('PROFESIONAL',540,390);ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='36px Arial';ctx.fillText('Akurat • Cepat • Terpercaya',540,460);}
+    ctx.fillStyle=t.acc;ctx.fillRect(150,490,780,4);
+    layanan.forEach((item,i)=>{ctx.fillStyle='rgba(255,255,255,0.1)';rr(ctx,80+(i%2)*510,520+Math.floor(i/2)*80,490,65,12);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.textAlign='center';ctx.fillText(item,325+(i%2)*510,562+Math.floor(i/2)*80);});
+    ctx.fillStyle=t.acc;ctx.font='bold 28px Arial';ctx.fillText('📞 '+phone,540,760);
+  } else if(layout===3){
+    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(1080,0);ctx.lineTo(680,1080);ctx.lineTo(0,1080);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill();ctx.restore();
+    ctx.textAlign='left';ctx.fillStyle=t.acc;ctx.font='bold 36px Arial';ctx.fillText('TERJEMAHPEDIA',60,90);ctx.fillStyle=t.acc;ctx.fillRect(60,105,400,5);
+    if(diskon){ctx.fillStyle=t.acc;ctx.font='bold 75px Arial';ctx.fillText('DISKON '+diskon+'%',60,230);}
+    else{ctx.fillStyle=t.acc;ctx.font='bold 58px Arial';ctx.fillText('JASA',60,220);ctx.fillStyle='#fff';ctx.font='bold 130px Arial';ctx.fillText('TERJEMAH',60,360);ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 50px Arial';ctx.fillText('PROFESIONAL',60,430);}
+    ctx.fillStyle=t.acc;ctx.fillRect(60,465,520,5);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='30px Arial';ctx.fillText('Solusi terjemahan terpercaya',60,515);ctx.fillText('untuk pribadi & bisnis.',60,555);
+    layanan.forEach((item,i)=>{ctx.fillStyle='rgba(255,255,255,0.1)';rr(ctx,60+(i%2)*490,590+Math.floor(i/2)*80,460,65,12);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.fillText(item,108+(i%2)*490,630+Math.floor(i/2)*80);});
+    ctx.fillStyle=t.acc;ctx.font='bold 28px Arial';ctx.fillText('WA: '+phone,60,835);dg(ctx,880,400,140,t.acc);
+  } else {
+    ctx.fillStyle='rgba(255,255,255,0.06)';rr(ctx,40,40,1000,200,20);rr(ctx,40,270,1000,490,20);rr(ctx,40,790,1000,210,20);
+    ctx.fillStyle=t.acc;ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.fillText('✦ TERJEMAHPEDIA ✦',540,115);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.fillText('Jasa Terjemah Profesional & Terpercaya',540,160);dg(ctx,950,140,65,t.acc);
+    if(diskon){ctx.fillStyle='#fff';ctx.font='bold 65px Arial';ctx.fillText('PROMO DISKON '+diskon+'%',540,380);}
+    else{ctx.fillStyle=t.acc;ctx.font='bold 90px Arial';ctx.fillText('JASA TERJEMAH',540,380);ctx.fillStyle='#fff';ctx.font='bold 60px Arial';ctx.fillText('PROFESIONAL',540,458);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='30px Arial';ctx.fillText('Akurat • Cepat • Rahasia • Terpercaya',540,510);}
+    ctx.fillStyle=t.acc;ctx.fillRect(200,558,680,4);
+    layanan.forEach((item,i)=>{ctx.fillStyle='rgba(255,255,255,0.12)';rr(ctx,60+(i%2)*510,585+Math.floor(i/2)*75,490,62,12);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.textAlign='center';ctx.fillText(item,305+(i%2)*510,625+Math.floor(i/2)*75);});
+    ctx.fillStyle='#25D366';ctx.beginPath();ctx.arc(140,885,40,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText('WA',140,892);ctx.fillStyle=t.acc;ctx.font='bold 44px Arial';ctx.fillText(phone,580,900);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='24px Arial';ctx.fillText('Bahasa Bukan Penghalang, Kami Jembatannya.',540,950);
+  }
+
+  const fg=ctx.createLinearGradient(0,0,1080,0);fg.addColorStop(0,t.acc);fg.addColorStop(1,t.acc2);ctx.fillStyle=fg;ctx.fillRect(0,1058,1080,22);
+  return canvas.toDataURL('image/jpeg',0.95);
+}
+
+// ===================== GENERATE REELS VIDEO =====================
+async function genReelsVideo(cmd, slideCount, themeKey) {
+  const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
+  const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
+  const isDoc=cmd.toLowerCase().includes('dokumen');
+
+  const allThemes={
+    navy:{bg1:'#0d1b4b',bg2:'#1a3a7c',acc:'#F5A623',acc2:'#E8860A'},
+    green:{bg1:'#1a3a1a',bg2:'#2d5a2d',acc:'#FFD700',acc2:'#FFA500'},
+    red:{bg1:'#4a0a0a',bg2:'#8b1a1a',acc:'#FFD700',acc2:'#FF8C00'},
+    purple:{bg1:'#2a0a4a',bg2:'#5c1a8c',acc:'#FFD700',acc2:'#FF69B4'},
+    dark:{bg1:'#1a1a1a',bg2:'#2d2d2d',acc:'#F5A623',acc2:'#FFD700'},
+  };
+  const themeKeys=Object.keys(allThemes);
+  const t=themeKey==='random'?allThemes[themeKeys[Math.floor(Math.random()*themeKeys.length)]]:allThemes[themeKey]||allThemes.navy;
+
+  const allSlides=diskon
+    ?[
+      {title:'🔥 PROMO SPESIAL',sub:'DISKON '+diskon+'%',body:'Penawaran terbaik\ndari Terjemahpedia!',bg:t.acc},
+      {title:'LAYANAN KAMI',sub:'',body:'📄 Terjemah Dokumen\n🌐 Multibahasa\n⚡ Cepat & Akurat',bg:null},
+      {title:'KEUNGGULAN',sub:'',body:'✓ Penerjemah Profesional\n✓ Harga Kompetitif\n✓ Hasil Akurat\n✓ Kerahasiaan Terjamin',bg:null},
+      {title:'HUBUNGI KAMI',sub:'WhatsApp Sekarang!',body:phone+'\n\n🌍 Bahasa Bukan Penghalang,\nKami Jembatannya!',bg:t.acc},
+      {title:'BERLAKU SEKARANG',sub:'Jangan Lewatkan!',body:'Hubungi segera:\n'+phone,bg:null},
+      {title:'TERJEMAHPEDIA',sub:'Jasa Terjemah Terpercaya',body:'Akurat • Cepat • Profesional',bg:null},
+    ]
+    :isDoc
+    ?[
+      {title:'TERJEMAHPEDIA',sub:'Terjemah Dokumen Resmi',body:'Solusi terpercaya untuk\nsemua dokumen penting Anda',bg:null},
+      {title:'LAYANAN DOKUMEN',sub:'',body:'📄 Ijazah & Transkrip\n📋 Akta & Sertifikat\n📑 Kontrak Bisnis\n✅ Dokumen Hukum',bg:null},
+      {title:'TERSUMPAH &',sub:'LEGALISIR',body:'Dokumen Anda diproses\noleh penerjemah tersumpah\nresmi & terpercaya',bg:null},
+      {title:'HUBUNGI KAMI',sub:'',body:'📲 WhatsApp:\n'+phone+'\n\nKonsultasi GRATIS!',bg:t.acc},
+      {title:'MENGAPA KAMI?',sub:'',body:'✓ Penerjemah Bersertifikat\n✓ Tepat Waktu\n✓ Harga Bersaing\n✓ Kerahasiaan Terjamin',bg:null},
+      {title:'TERJEMAHPEDIA',sub:'Hubungi Sekarang!',body:phone,bg:t.acc},
+    ]
+    :[
+      {title:'TERJEMAHPEDIA',sub:'Jasa Terjemah Profesional',body:'Solusi terjemahan terpercaya\nuntuk semua kebutuhan\nbisnis & pribadi Anda',bg:null},
+      {title:'LAYANAN KAMI',sub:'',body:'📄 Terjemah Dokumen\n🌐 Multibahasa\n⚡ Cepat & Tepat\n✅ Terjemah Resmi',bg:null},
+      {title:'MENGAPA KAMI?',sub:'',body:'✓ Penerjemah Berpengalaman\n✓ Hasil Akurat & Natural\n✓ Tepat Waktu\n✓ Harga Kompetitif',bg:null},
+      {title:'HUBUNGI KAMI',sub:'WhatsApp Sekarang!',body:phone+'\n\nKonsultasi GRATIS!',bg:t.acc},
+      {title:'BAHASA BUKAN',sub:'PENGHALANG',body:'Kami Jembatannya! 🌍\n\nTerjemahpedia siap\nmembantu Anda',bg:null},
+      {title:'TERJEMAHPEDIA',sub:'',body:'Akurat • Cepat\nProfesional • Terpercaya\n\n'+phone,bg:t.acc},
+    ];
+
+  const slides=allSlides.slice(0,slideCount);
+  const canvas=document.createElement('canvas'); canvas.width=1080; canvas.height=1920;
+  const ctx=canvas.getContext('2d');
+  const fps=30; const secPerSlide=2;
+  const totalFrames=slides.length*secPerSlide*fps;
+
+  if(!MediaRecorder.isTypeSupported('video/webm')) throw new Error('Browser tidak support video recording. Gunakan Chrome.');
+
+  const stream=canvas.captureStream(fps);
+  const mimeType=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
+  const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:3000000});
+  const chunks=[];
+  recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+
+  return new Promise((resolve,reject)=>{
+    recorder.onstop=()=>{ const blob=new Blob(chunks,{type:'video/webm'}); resolve(URL.createObjectURL(blob)); };
+    recorder.onerror=reject;
+    recorder.start(100);
+    let frame=0;
+
+    const draw=()=>{
+      if(frame>=totalFrames){recorder.stop();return;}
+      const si=Math.floor(frame/(fps*secPerSlide))%slides.length;
+      const sp=(frame%(fps*secPerSlide))/(fps*secPerSlide);
+      const slide=slides[si];
+      const fadeIn=Math.min(sp*4,1);
+      const slideY=(1-Math.pow(fadeIn,2))*60;
+
+      // Background
+      if(slide.bg){ctx.fillStyle=slide.bg;ctx.fillRect(0,0,1080,1920);}
+      else{const g=ctx.createLinearGradient(0,0,1080,1920);g.addColorStop(0,t.bg1);g.addColorStop(1,t.bg2);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1920);}
+
+      // Dekorasi
+      ctx.globalAlpha=0.06;ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.arc(1080,0,500,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(0,1920,400,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+
+      // Top & bottom bar
+      const ag=ctx.createLinearGradient(0,0,1080,0);ag.addColorStop(0,t.acc);ag.addColorStop(1,t.acc2);
+      ctx.fillStyle=ag;ctx.fillRect(0,0,1080,18);ctx.fillRect(0,1902,1080,18);
+
+      ctx.globalAlpha=fadeIn;
+
+      // Logo
+      const logoBg=slide.bg?t.bg1:t.acc;
+      ctx.fillStyle=logoBg; rr(ctx,40,50,420,75,37);
+      ctx.fillStyle=slide.bg?'#fff':t.bg1; ctx.font='bold 30px Arial'; ctx.textAlign='center';
+      ctx.fillText('✦ TERJEMAHPEDIA ✦',250,98);
+
+      // Judul
+      const titleColor=slide.bg?t.bg1:'#fff';
+      ctx.fillStyle=titleColor; ctx.font='bold 95px Arial'; ctx.textAlign='center';
+      ctx.fillText(slide.title,540,750+slideY);
+
+      if(slide.sub){
+        const subColor=slide.bg?t.bg1:t.acc;
+        ctx.fillStyle=subColor; ctx.font='bold 65px Arial';
+        ctx.fillText(slide.sub,540,850+slideY);
+      }
+
+      // Garis
+      const lg=ctx.createLinearGradient(100,0,980,0);
+      lg.addColorStop(0,'transparent');lg.addColorStop(0.5,slide.bg?t.bg1:t.acc);lg.addColorStop(1,'transparent');
+      ctx.fillStyle=lg;ctx.fillRect(100,890+slideY,880,5);
+
+      // Body
+      const lines=slide.body.split('\n');
+      const lineH=lines.length>4?65:75;
+      lines.forEach((line,i)=>{
+        const bodyColor=slide.bg?t.bg1:'rgba(255,255,255,0.92)';
+        ctx.fillStyle=bodyColor; ctx.font=`${lines.length>4?42:48}px Arial`; ctx.textAlign='center';
+        ctx.fillText(line,540,970+i*lineH+slideY);
+      });
+
+      // Progress dots
+      const dotY=1820;
+      slides.forEach((_,i)=>{
+        ctx.beginPath();ctx.arc(540+(i-slides.length/2+0.5)*50,dotY,i===si?13:7,0,Math.PI*2);
+        ctx.fillStyle=i===si?t.acc:'rgba(255,255,255,0.3)';ctx.fill();
+      });
+
+      ctx.globalAlpha=1;
+      frame++;
+      requestAnimationFrame(draw);
+    };
+    draw();
+  });
+}
+
+// ===================== UPLOAD =====================
+async function uploadImgBB(base64) {
+  const key=localStorage.getItem('ap_s-imgbb');
+  if(!key) throw new Error('ImgBB API key belum diatur di Pengaturan');
+  const fd=new FormData(); fd.append('key',key); fd.append('image',base64.split(',')[1]);
+  const r=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd});
+  const d=await r.json();
+  if(d.data&&d.data.url) return d.data.url;
+  throw new Error('Upload ImgBB gagal: '+(d.error?.message||'Unknown'));
+}
+
+async function uploadCatbox(blobUrl) {
+  const blob=await fetch(blobUrl).then(r=>r.blob());
+  const fd=new FormData();
+  fd.append('reqtype','fileupload');
+  fd.append('fileToUpload',blob,'reels.webm');
+  const r=await fetch('https://catbox.moe/user/api.php',{method:'POST',body:fd});
+  const url=await r.text();
+  if(url.startsWith('https://')) return url.trim();
+  throw new Error('Upload Catbox gagal: '+url);
+}
+
+// ===================== POST TO INSTAGRAM =====================
+async function postIG(token,igId,mediaUrl,caption,type) {
+  let body={caption,access_token:token};
+  if(type==='video'){body.video_url=mediaUrl;body.media_type='REELS';}
+  else{body.image_url=mediaUrl;}
+
+  const r1=await fetch(`https://graph.facebook.com/v19.0/${igId}/media`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d1=await r1.json();
+  if(d1.error) throw new Error(d1.error.message);
+
+  if(type==='video') await new Promise(r=>setTimeout(r,15000));
+
+  const r2=await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creation_id:d1.id,access_token:token})});
+  const d2=await r2.json();
+  if(d2.error) throw new Error(d2.error.message);
+  return d2.id;
+}
+
+// ===================== HELPERS =====================
+function setStep(sid,did,tid,state,icon,text){
+  const s=document.getElementById(sid),d=document.getElementById(did),t=document.getElementById(tid);
+  if(!s)return;s.className='step '+state;
+  d.className='step-dot'+(state==='active'?' spin':'');
+  d.textContent=state==='active'?'':icon;t.textContent=text;
+}
+
+function resetSteps(p){
+  if(p==='f'){
+    [['fs-caption','fd-caption','ft-caption','Generate caption & hashtag'],['fs-poster','fd-poster','ft-poster','Buat poster'],['fs-upload','fd-upload','ft-upload','Upload gambar'],['fs-post','fd-post','ft-post','Posting ke Feed']].forEach(([s,d,t,tx],i)=>setStep(s,d,t,'',i+1,tx));
+  }else{
+    [['rs-caption','rd-caption','rt-caption','Generate caption & hashtag'],['rs-video','rd-video','rt-video','Render video slide'],['rs-upload','rd-upload','rt-upload','Upload video'],['rs-post','rd-post','rt-post','Posting ke Reels']].forEach(([s,d,t,tx],i)=>setStep(s,d,t,'',i+1,tx));
+  }
+}
+
+function setBtnLoad(id,txt){const b=document.getElementById(id);b.disabled=true;b.innerHTML='<span class="spinner"></span> '+txt;}
+function resetBtn(id,txt){const b=document.getElementById(id);b.disabled=false;b.innerHTML=txt;}
+
+function addHistory(cmd,url,status,type){
+  historyItems.unshift({cmd,url,status,type,time:new Date().toLocaleString('id-ID')});
+  if(historyItems.length>30)historyItems.pop();
+  localStorage.setItem('ap_hist_v3',JSON.stringify(historyItems));
+  renderHistory();
+}
+
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  if(!historyItems.length){list.innerHTML='<p style="font-size:13px;color:#aaa;text-align:center;padding:20px;">Belum ada riwayat.</p>';return;}
+  list.innerHTML=historyItems.map(h=>`
+    <div class="history-item">
+      ${h.type==='reels'?`<div class="history-thumb" style="background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">🎬</div>`:`<img class="history-thumb" src="${h.url||''}" onerror="this.style.background='#eee'" alt="">`}
+      <div class="history-info">
+        <div class="history-cmd">${h.cmd}</div>
+        <div class="history-time">${h.time} · ${h.type==='reels'?'Reels':'Feed'}</div>
+      </div>
+      <span class="badge ${h.status==='posted'?'b-ok':'b-fail'}">${h.status==='posted'?'✅ Posted':'❌ Gagal'}</span>
+    </div>`).join('');
+}
+
+function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
+
+function saveSettings(){
+  ['s-token','s-igid','s-imgbb'].forEach(id=>{const v=document.getElementById(id).value.trim();if(v)localStorage.setItem('ap_'+id,v);});
+  document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan!</span>';
+  setTimeout(()=>document.getElementById('conn-st').innerHTML='',2000);
+}
+
+async function testConn(){
+  const token=document.getElementById('s-token').value||localStorage.getItem('ap_s-token');
+  const id=document.getElementById('s-igid').value||localStorage.getItem('ap_s-igid');
+  const s=document.getElementById('conn-st');
+  if(!token||!id){s.innerHTML='<span style="color:#E24B4A">⚠️ Isi token dan ID</span>';return;}
+  s.innerHTML='<span class="spinner"></span> Testing...';
+  try{
+    const r=await fetch(`https://graph.facebook.com/v19.0/${id}?fields=name,username&access_token=${token}`);
+    const d=await r.json();
+    if(d.error)throw new Error(d.error.message);
+    s.innerHTML=`<span style="color:#3b6d11">✅ @${d.username||d.name}</span>`;
+  }catch(e){s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`;}
+}
+
+function toggleTok(){const i=document.getElementById('s-token');i.type=i.type==='password'?'text':'password';}
+
+// Canvas helpers
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
+function dg(ctx,cx,cy,r,color){ctx.strokeStyle=color;ctx.lineWidth=4;ctx.globalAlpha=0.6;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.ellipse(cx,cy,r*0.5,r,0,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx+r,cy);ctx.stroke();ctx.globalAlpha=1;}
+</script>
+</body>
+</html>
