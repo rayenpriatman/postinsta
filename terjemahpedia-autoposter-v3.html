@@ -296,30 +296,32 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
   <div class="card">
     <div class="card-title">🎬 Upload Video Reels (Cloudinary)</div>
     <div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:8px;padding:12px;font-size:13px;color:#1a4a8a;margin-bottom:14px;line-height:1.7;">
-      Cloud name Anda: <strong>di5bhfcl2</strong> — sudah terdeteksi otomatis! Isi API Key & Secret di bawah.
-    </div>
-    <div class="field">
-      <label>Cloud Name</label>
-      <input type="text" id="s-cloud-name" placeholder="di5bhfcl2" value="di5bhfcl2">
-      <p class="hint">Terlihat di kiri atas dashboard Cloudinary</p>
+      ✅ Cloud name Anda: <strong>di5bhfcl2</strong> — sudah terisi otomatis!<br>
+      Hanya perlu buat <strong>Upload Preset</strong> sekali di Cloudinary.
     </div>
     <div class="row">
       <div class="field">
-        <label>API Key</label>
-        <input type="text" id="s-cloud-key" placeholder="942226935671998">
-        <p class="hint">Dari Settings → API Keys</p>
+        <label>Cloud Name</label>
+        <input type="text" id="s-cloud-name" placeholder="di5bhfcl2">
+        <p class="hint">Terlihat di kiri atas dashboard Cloudinary</p>
       </div>
       <div class="field">
-        <label>API Secret</label>
-        <div style="display:flex;gap:6px;">
-          <input type="password" id="s-cloud-secret" placeholder="••••••••••••••••••••" style="flex:1;">
-          <button class="btn" style="padding:9px;" onclick="toggleSecret()">👁️</button>
-        </div>
-        <p class="hint">Dari Settings → API Keys → klik Show</p>
+        <label>Upload Preset (Unsigned)</label>
+        <input type="text" id="s-cloud-preset" placeholder="ml_default">
+        <p class="hint">Settings → Upload → Upload Presets → Add preset → <strong>Unsigned</strong></p>
       </div>
     </div>
-    <button class="btn btn-dark" onclick="testCloudinary()" style="margin-bottom:8px;">🔌 Test Cloudinary</button>
-    <span id="cloud-st" style="font-size:12px;margin-left:8px;"></span>
+    <div style="background:#fffbea;border:1px solid #f5d367;border-radius:8px;padding:12px;font-size:12px;color:#7a5c00;margin-bottom:12px;line-height:1.8;">
+      <strong>Cara buat Upload Preset:</strong><br>
+      1. Buka <a href="https://console.cloudinary.com/settings/upload" target="_blank" style="color:#185fa5;">console.cloudinary.com/settings/upload</a><br>
+      2. Scroll ke bawah → <strong>Upload presets</strong> → klik <strong>Add upload preset</strong><br>
+      3. <strong>Signing mode</strong> → pilih <strong>Unsigned</strong><br>
+      4. Klik <strong>Save</strong> → catat nama preset-nya
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-dark" onclick="testCloudinary()">🔌 Test Cloudinary</button>
+      <span id="cloud-st" style="font-size:12px;"></span>
+    </div>
   </div>
 
   <div class="card">
@@ -352,10 +354,13 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-key','s-cloud-secret'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
+  // Default cloud name
+  const cn=document.getElementById('s-cloud-name');
+  if(cn&&!cn.value) cn.value='di5bhfcl2';
   renderHistory();
   const t=localStorage.getItem('ap_s-token'), id=localStorage.getItem('ap_s-igid');
   if(t&&id) document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Token tersimpan</span>';
@@ -814,23 +819,15 @@ async function uploadImgBB(base64) {
 }
 
 async function uploadCloudinary(blobUrl) {
-  const cloudName = localStorage.getItem('ap_s-cloud-name') || 'di5bhfcl2';
-  const apiKey = localStorage.getItem('ap_s-cloud-key');
-  const apiSecret = localStorage.getItem('ap_s-cloud-secret');
-  if(!apiKey || !apiSecret) throw new Error('Cloudinary API Key & Secret belum diisi di Pengaturan');
+  const cloudName = localStorage.getItem('ap_s-cloud-name');
+  const preset = localStorage.getItem('ap_s-cloud-preset');
+  if(!cloudName) throw new Error('Cloud Name Cloudinary belum diisi di Pengaturan');
+  if(!preset) throw new Error('Upload Preset Cloudinary belum diisi di Pengaturan');
 
   const blob = await fetch(blobUrl).then(r => r.blob());
-
-  // Generate signature
-  const timestamp = Math.floor(Date.now() / 1000);
-  const paramsToSign = `timestamp=${timestamp}`;
-  const signature = await generateCloudinarySignature(paramsToSign, apiSecret);
-
   const fd = new FormData();
   fd.append('file', blob, 'reels.webm');
-  fd.append('api_key', apiKey);
-  fd.append('timestamp', timestamp);
-  fd.append('signature', signature);
+  fd.append('upload_preset', preset);
   fd.append('resource_type', 'video');
 
   const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
@@ -841,37 +838,33 @@ async function uploadCloudinary(blobUrl) {
   throw new Error('Upload Cloudinary gagal: ' + (d.error?.message || JSON.stringify(d)));
 }
 
-async function generateCloudinarySignature(paramsToSign, apiSecret) {
-  const msgBuffer = new TextEncoder().encode(paramsToSign + apiSecret);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 async function testCloudinary() {
-  const cloudName = document.getElementById('s-cloud-name').value || localStorage.getItem('ap_s-cloud-name');
-  const apiKey = document.getElementById('s-cloud-key').value || localStorage.getItem('ap_s-cloud-key');
-  const apiSecret = document.getElementById('s-cloud-secret').value || localStorage.getItem('ap_s-cloud-secret');
+  const cloudName = document.getElementById('s-cloud-name').value.trim();
+  const preset = document.getElementById('s-cloud-preset').value.trim();
   const s = document.getElementById('cloud-st');
-  if(!cloudName || !apiKey || !apiSecret) { s.innerHTML='<span style="color:#E24B4A">⚠️ Isi semua field Cloudinary dulu</span>'; return; }
+  if(!cloudName || !preset) { s.innerHTML='<span style="color:#E24B4A">⚠️ Isi Cloud Name dan Upload Preset dulu</span>'; return; }
   s.innerHTML='<span class="spinner"></span> Testing...';
+
+  // Test dengan upload file kecil (1x1 pixel PNG)
   try {
-    const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/resources/video?max_results=1`, {
-      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':' + apiSecret) }
-    });
+    const testBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==').then(r=>r.blob());
+    const fd = new FormData();
+    fd.append('file', testBlob, 'test.png');
+    fd.append('upload_preset', preset);
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method:'POST', body:fd });
     const d = await r.json();
     if(d.error) throw new Error(d.error.message);
-    s.innerHTML='<span style="color:#3b6d11">✅ Cloudinary terhubung!</span>';
-    // Auto save
+    s.innerHTML='<span style="color:#3b6d11">✅ Cloudinary terhubung! Preset valid.</span>';
     localStorage.setItem('ap_s-cloud-name', cloudName);
-    localStorage.setItem('ap_s-cloud-key', apiKey);
-    localStorage.setItem('ap_s-cloud-secret', apiSecret);
-  } catch(e) { s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`; }
+    localStorage.setItem('ap_s-cloud-preset', preset);
+  } catch(e) {
+    s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`;
+  }
 }
 
 function toggleSecret() {
   const i = document.getElementById('s-cloud-secret');
-  i.type = i.type === 'password' ? 'text' : 'password';
+  if(i) i.type = i.type === 'password' ? 'text' : 'password';
 }
 
 // ===================== POST TO INSTAGRAM =====================
@@ -935,7 +928,7 @@ function renderHistory(){
 function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
 
 function saveSettings(){
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-key','s-cloud-secret'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
