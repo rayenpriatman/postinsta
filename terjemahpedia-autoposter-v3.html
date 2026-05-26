@@ -837,7 +837,7 @@ async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType
 
   if(musicType !== 'none') {
     try {
-      const pixabayKey = localStorage.getItem('ap_s-pixabay') || '47900707-a25c32b22a2d3fe83b1dd88be';
+      const pixabayKey = localStorage.getItem('ap_s-pixabay') || '55723198-be000c6ab3c29e36bc1a29ab7';
 
       // Query sesuai mood
       const queries = {
@@ -848,18 +848,21 @@ async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType
       };
       const q = encodeURIComponent(queries[musicType] || queries.upbeat);
 
-      // Fetch musik dari Pixabay
-      const apiRes = await fetch(`https://pixabay.com/api/music/?key=${pixabayKey}&q=${q}&per_page=10&order=popular`);
+      // Pixabay musik via CORS proxy
+      const pixabayUrl = `https://pixabay.com/api/music/?key=${pixabayKey}&q=${q}&per_page=10&order=popular`;
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(pixabayUrl)}`;
+
+      const apiRes = await fetch(proxyUrl);
+      if(!apiRes.ok) throw new Error('Pixabay tidak bisa diakses');
       const apiData = await apiRes.json();
 
       let mp3Url = null;
       if(apiData.hits && apiData.hits.length > 0) {
-        // Pilih random dari 5 hasil teratas
         const pick = apiData.hits[Math.floor(Math.random() * Math.min(5, apiData.hits.length))];
-        mp3Url = pick.audio; // URL MP3 langsung
+        mp3Url = pick.audio;
       }
 
-      if(!mp3Url) throw new Error('Tidak ada musik ditemukan');
+      if(!mp3Url) throw new Error('Tidak ada musik ditemukan di Pixabay');
 
       // Download & decode MP3
       const audioData = await fetch(mp3Url).then(r => r.arrayBuffer());
@@ -1076,16 +1079,19 @@ function savePixabay() {
 }
 
 async function testPixabay() {
-  const key = document.getElementById('s-pixabay').value.trim() || localStorage.getItem('ap_s-pixabay') || '47900707-a25c32b22a2d3fe83b1dd88be';
+  const key = document.getElementById('s-pixabay').value.trim() || localStorage.getItem('ap_s-pixabay') || '55723198-be000c6ab3c29e36bc1a29ab7';
   const s = document.getElementById('pixabay-st');
   s.innerHTML='<span class="spinner"></span> Testing...';
   try {
-    const r = await fetch(`https://pixabay.com/api/music/?key=${key}&q=corporate&per_page=3`);
+    const pixabayUrl = `https://pixabay.com/api/music/?key=${key}&q=corporate&per_page=3`;
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(pixabayUrl)}`;
+    const r = await fetch(proxyUrl);
+    if(!r.ok) throw new Error('Tidak bisa akses Pixabay');
     const d = await r.json();
     if(d.hits && d.hits.length > 0) {
       s.innerHTML=`<span style="color:#3b6d11">✅ Pixabay OK! ${d.totalHits} lagu tersedia.</span>`;
       localStorage.setItem('ap_s-pixabay', key);
-    } else throw new Error('Tidak ada hasil');
+    } else throw new Error('Tidak ada hasil — cek API key');
   } catch(e) { s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`; }
 }
 
