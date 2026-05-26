@@ -198,31 +198,29 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
         </select>
       </div>
     </div>
-    <div class="row" style="margin-bottom:14px;">
-      <div class="field" style="margin-bottom:0;">
-        <label>Tema warna</label>
-        <select id="reels-theme">
-          <option value="random">🎲 Random setiap kali</option>
-          <option value="navy">🔵 Navy + Gold</option>
-          <option value="green">🟢 Hijau + Gold</option>
-          <option value="red">🔴 Merah + Gold</option>
-          <option value="purple">🟣 Ungu + Gold</option>
-          <option value="dark">⚫ Gelap + Orange</option>
-        </select>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Tema warna</label>
+      <select id="reels-theme">
+        <option value="random">🎲 Random setiap kali</option>
+        <option value="navy">🔵 Navy + Gold</option>
+        <option value="green">🟢 Hijau + Gold</option>
+        <option value="red">🔴 Merah + Gold</option>
+        <option value="purple">🟣 Ungu + Gold</option>
+        <option value="dark">⚫ Gelap + Orange</option>
+      </select>
+    </div>
+    <div style="background:#f8f8f6;border:1px dashed #ccc;border-radius:10px;padding:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:13px;color:#555;font-weight:500;">🎵 Background Music</div>
+        <div id="music-status" style="font-size:12px;color:#888;margin-top:2px;">Belum ada musik — upload MP3 bebas copyright</div>
       </div>
-      <div class="field" style="margin-bottom:0;">
-        <label>🎵 Background music (Pixabay)</label>
-        <select id="reels-music">
-          <option value="none">Tanpa musik</option>
-          <option value="upbeat" selected>🎶 Upbeat — energik & ceria</option>
-          <option value="calm">🎵 Calm — tenang & santai</option>
-          <option value="corporate">💼 Corporate — profesional</option>
-          <option value="inspiring">✨ Inspiring — motivasi</option>
-        </select>
+      <div style="display:flex;gap:6px;">
+        <input type="file" accept="audio/mp3,audio/mpeg,audio/*" id="music-file-input" onchange="loadMusicSimple(this)" style="display:none;">
+        <button class="btn" id="music-upload-btn" onclick="document.getElementById('music-file-input').click()" style="font-size:12px;padding:7px 12px;">📂 Upload MP3</button>
+        <button class="btn" id="music-remove-btn" onclick="removeMusicSimple()" style="font-size:12px;padding:7px 12px;display:none;">🗑️</button>
       </div>
     </div>
     <button class="btn btn-ig btn-full" onclick="runReels()" id="reels-btn">🎬 Generate Video Reels</button>
-    <p style="font-size:11px;color:#aaa;margin-top:8px;">🎵 Musik diambil otomatis dari <strong>Pixabay</strong> — bebas copyright, langsung digabung ke video</p>
   </div>
 
   <div class="progress" id="reels-progress">
@@ -303,20 +301,6 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       <button class="btn btn-dark" onclick="saveSettings()">💾 Simpan</button>
       <button class="btn" onclick="testConn()">🔌 Test koneksi</button>
       <span id="conn-st" style="font-size:12px;"></span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🎵 Pixabay API Key (untuk musik Reels)</div>
-    <div class="field">
-      <label>Pixabay API Key</label>
-      <input type="text" id="s-pixabay" placeholder="47900707-xxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-      <p class="hint">Daftar gratis di <a href="https://pixabay.com/api/docs/" target="_blank">pixabay.com/api/docs</a> → login → dapat API key. Sudah ada default key bawaan.</p>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-dark" onclick="savePixabay()">💾 Simpan</button>
-      <button class="btn" onclick="testPixabay()">🔌 Test Pixabay</button>
-      <span id="pixabay-st" style="font-size:12px;"></span>
     </div>
   </div>
 
@@ -414,7 +398,7 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic','s-pixabay'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
@@ -424,6 +408,9 @@ window.onload = () => {
   const t=localStorage.getItem('ap_s-token'), id=localStorage.getItem('ap_s-igid');
   if(t&&id) document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Token tersimpan</span>';
   if(localStorage.getItem('ap_s-anthropic')) document.getElementById('anthropic-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan</span>';
+  checkMusicStatus();
+  updateMusicUploadUI();
+  checkMusicSimple();
 };
 
 // ===================== FEED =====================
@@ -514,7 +501,6 @@ async function runReels() {
   const slideCount=parseInt(document.getElementById('reels-slides').value);
   const themeKey=document.getElementById('reels-theme').value;
   const secPerSlide=parseInt(document.getElementById('reels-duration').value);
-  const musicType=document.getElementById('reels-music').value;
 
   document.getElementById('reels-progress').style.display='block';
   document.getElementById('reels-result').style.display='none';
@@ -532,7 +518,7 @@ async function runReels() {
   setStep('rs-video','rd-video','rt-video','active','⏳','Render video slide...');
   let videoIsMP4 = false;
   try{
-    const result = await genReelsVideo(cmd,slideCount,themeKey,secPerSlide,musicType);
+    const result = await genReelsVideo(cmd,slideCount,themeKey,secPerSlide);
     reelsBlobUrl = result.url;
     videoIsMP4 = result.isMP4;
     setStep('rs-video','rd-video','rt-video','done','✓',`Video selesai (${videoIsMP4?'MP4':'WebM — akan diconvert'})`);
@@ -783,7 +769,7 @@ async function genImage(cmd) {
 }
 
 // ===================== GENERATE REELS VIDEO =====================
-async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType='upbeat') {
+async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3) {
   const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
   const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
   const isDoc=cmd.toLowerCase().includes('dokumen');
@@ -831,51 +817,19 @@ async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType
   const fps=30;
   const totalFrames=slides.length*secPerSlide*fps;
 
-  // === SETUP MUSIK dari Pixabay API ===
+  // === MUSIK dari file upload user ===
   let audioStream = null;
   let audioCtx = null;
-
-  if(musicType !== 'none') {
-    try {
-      const pixabayKey = localStorage.getItem('ap_s-pixabay') || '55723198-be000c6ab3c29e36bc1a29ab7';
-
-      // Query sesuai mood
-      const queries = {
-        upbeat: 'upbeat happy energetic',
-        calm: 'calm relaxing peaceful',
-        corporate: 'corporate business professional',
-        inspiring: 'inspiring motivational',
-      };
-      const q = encodeURIComponent(queries[musicType] || queries.upbeat);
-
-      // Pixabay musik via CORS proxy
-      const pixabayUrl = `https://pixabay.com/api/music/?key=${pixabayKey}&q=${q}&per_page=10&order=popular`;
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(pixabayUrl)}`;
-
-      const apiRes = await fetch(proxyUrl);
-      if(!apiRes.ok) throw new Error('Pixabay tidak bisa diakses');
-      const apiData = await apiRes.json();
-
-      let mp3Url = null;
-      if(apiData.hits && apiData.hits.length > 0) {
-        const pick = apiData.hits[Math.floor(Math.random() * Math.min(5, apiData.hits.length))];
-        mp3Url = pick.audio;
-      }
-
-      if(!mp3Url) throw new Error('Tidak ada musik ditemukan di Pixabay');
-
-      // Download & decode MP3
-      const audioData = await fetch(mp3Url).then(r => r.arrayBuffer());
+  try {
+    const musicData = await getMusicFromDB('main');
+    if(musicData) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioCtx.decodeAudioData(audioData);
+      const audioBuffer = await audioCtx.decodeAudioData(musicData.slice(0));
       const dest = audioCtx.createMediaStreamDestination();
       audioStream = dest.stream;
-
       const totalDuration = slides.length * secPerSlide;
       const gainNode = audioCtx.createGain();
       gainNode.connect(dest);
-
-      // Loop musik
       let offset = 0;
       const startT = audioCtx.currentTime + 0.1;
       while(offset < totalDuration + 2) {
@@ -885,41 +839,22 @@ async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType
         src.start(startT + offset);
         offset += audioBuffer.duration;
       }
-
-      // Fade in & fade out
       gainNode.gain.setValueAtTime(0, startT);
       gainNode.gain.linearRampToValueAtTime(0.5, startT + 0.5);
       gainNode.gain.setValueAtTime(0.5, startT + totalDuration - 0.8);
       gainNode.gain.linearRampToValueAtTime(0, startT + totalDuration);
-
-    } catch(e) {
-      console.log('Pixabay musik gagal:', e.message, '— lanjut tanpa musik');
-      audioStream = null;
-      if(audioCtx) { audioCtx.close(); audioCtx = null; }
     }
-  }
+  } catch(e) { audioStream = null; if(audioCtx){audioCtx.close();audioCtx=null;} }
 
-  // Pilih format terbaik — prefer MP4 untuk kompatibilitas Instagram
-  const mimeTypes = [
-    'video/mp4;codecs=h264',
-    'video/mp4;codecs=avc1',
-    'video/mp4',
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm',
-  ];
+  // Pilih format terbaik
+  const mimeTypes = ['video/mp4;codecs=h264','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
   const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m));
   if(!mimeType) throw new Error('Browser tidak support video recording. Gunakan Chrome terbaru.');
 
-  // Gabungkan stream video + audio
   const videoStream = canvas.captureStream(fps);
-  let combinedStream;
-  if(audioStream) {
-    const tracks = [...videoStream.getTracks(), ...audioStream.getTracks()];
-    combinedStream = new MediaStream(tracks);
-  } else {
-    combinedStream = videoStream;
-  }
+  const combinedStream = audioStream
+    ? new MediaStream([...videoStream.getTracks(), ...audioStream.getTracks()])
+    : videoStream;
 
   const recorder=new MediaRecorder(combinedStream,{mimeType,videoBitsPerSecond:4000000});
   const chunks=[];
@@ -1070,30 +1005,103 @@ async function testCloudinary() {
   }
 }
 
-function savePixabay() {
-  const v = document.getElementById('s-pixabay').value.trim();
-  if(!v) return;
-  localStorage.setItem('ap_s-pixabay', v);
-  document.getElementById('pixabay-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan!</span>';
-  setTimeout(()=>document.getElementById('pixabay-st').innerHTML='', 2000);
+// ===================== MUSIK INDEXEDDB =====================
+function openMusicDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('ap_music_db', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('music');
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
 }
 
-async function testPixabay() {
-  const key = document.getElementById('s-pixabay').value.trim() || localStorage.getItem('ap_s-pixabay') || '55723198-be000c6ab3c29e36bc1a29ab7';
-  const s = document.getElementById('pixabay-st');
-  s.innerHTML='<span class="spinner"></span> Testing...';
-  try {
-    const pixabayUrl = `https://pixabay.com/api/music/?key=${key}&q=corporate&per_page=3`;
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(pixabayUrl)}`;
-    const r = await fetch(proxyUrl);
-    if(!r.ok) throw new Error('Tidak bisa akses Pixabay');
-    const d = await r.json();
-    if(d.hits && d.hits.length > 0) {
-      s.innerHTML=`<span style="color:#3b6d11">✅ Pixabay OK! ${d.totalHits} lagu tersedia.</span>`;
-      localStorage.setItem('ap_s-pixabay', key);
-    } else throw new Error('Tidak ada hasil — cek API key');
-  } catch(e) { s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`; }
+async function saveMusicToDB(mood, arrayBuffer) {
+  const db = await openMusicDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('music', 'readwrite');
+    tx.objectStore('music').put(arrayBuffer, mood);
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
 }
+
+async function getMusicFromDB(mood) {
+  const db = await openMusicDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('music', 'readonly');
+    const req = tx.objectStore('music').get(mood);
+    req.onsuccess = e => resolve(e.target.result || null);
+    req.onerror = reject;
+  });
+}
+
+async function loadMusic(mood, input) {
+  if(!mood || mood==='none') return;
+  const file = input.files[0];
+  if(!file) return;
+  const uploadBtn = document.getElementById('music-upload-btn');
+  const status = document.getElementById('music-upload-status');
+  if(uploadBtn) uploadBtn.innerHTML = '<span class="spinner"></span> Loading...';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const testCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await testCtx.decodeAudioData(arrayBuffer.slice(0));
+    testCtx.close();
+    await saveMusicToDB(mood, arrayBuffer);
+    updateMusicUploadUI();
+  } catch(e) {
+    if(status) status.innerHTML = `<span style="color:#E24B4A">❌ File tidak valid — pastikan format MP3</span>`;
+    if(uploadBtn) uploadBtn.textContent = '📂 Upload MP3';
+  }
+}
+
+async function loadMusicSimple(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const btn = document.getElementById('music-upload-btn');
+  const status = document.getElementById('music-status');
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const testCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await testCtx.decodeAudioData(arrayBuffer.slice(0));
+    testCtx.close();
+    await saveMusicToDB('main', arrayBuffer);
+    const name = file.name.length > 25 ? file.name.slice(0,25)+'...' : file.name;
+    status.innerHTML = `<span style="color:#3b6d11">✅ ${name} (${(file.size/1024/1024).toFixed(1)}MB)</span>`;
+    btn.textContent = '🔄 Ganti';
+    document.getElementById('music-remove-btn').style.display = 'inline-flex';
+  } catch(e) {
+    status.innerHTML = '<span style="color:#E24B4A">❌ File tidak valid</span>';
+    btn.textContent = '📂 Upload MP3';
+  }
+}
+
+async function removeMusicSimple() {
+  const db = await openMusicDB();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('music', 'readwrite');
+    tx.objectStore('music').delete('main');
+    tx.oncomplete = resolve; tx.onerror = reject;
+  });
+  document.getElementById('music-status').innerHTML = 'Belum ada musik — upload MP3 bebas copyright';
+  document.getElementById('music-upload-btn').textContent = '📂 Upload MP3';
+  document.getElementById('music-remove-btn').style.display = 'none';
+}
+
+async function checkMusicSimple() {
+  const data = await getMusicFromDB('main').catch(()=>null);
+  if(data) {
+    document.getElementById('music-status').innerHTML = '<span style="color:#3b6d11">✅ Musik tersimpan — siap dipakai</span>';
+    document.getElementById('music-upload-btn').textContent = '🔄 Ganti';
+    document.getElementById('music-remove-btn').style.display = 'inline-flex';
+  }
+}
+
+
+function updateMusicUploadUI() { checkMusicSimple(); }
+
+async function checkMusicStatus() {}
 
 
 function saveAnthropic() {
