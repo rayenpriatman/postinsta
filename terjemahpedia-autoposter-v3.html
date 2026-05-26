@@ -178,16 +178,27 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       <label>Perintah konten</label>
       <input type="text" id="reels-cmd" placeholder="video terjemahpedia jasa terjemah no kontak 082323963884" onkeydown="if(event.key==='Enter')runReels()">
     </div>
-    <div class="row" style="margin-bottom:14px;">
+    <div class="row" style="margin-bottom:12px;">
       <div class="field" style="margin-bottom:0;">
         <label>Jumlah slide</label>
         <select id="reels-slides">
-          <option value="3">3 slide (~6 detik)</option>
-          <option value="4" selected>4 slide (~8 detik)</option>
-          <option value="5">5 slide (~10 detik)</option>
-          <option value="6">6 slide (~12 detik)</option>
+          <option value="3">3 slide</option>
+          <option value="4" selected>4 slide</option>
+          <option value="5">5 slide</option>
+          <option value="6">6 slide</option>
         </select>
       </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Durasi per slide</label>
+        <select id="reels-duration">
+          <option value="2">2 detik (cepat)</option>
+          <option value="3" selected>3 detik (normal)</option>
+          <option value="4">4 detik (lambat)</option>
+          <option value="5">5 detik (sangat lambat)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:14px;">
       <div class="field" style="margin-bottom:0;">
         <label>Tema warna</label>
         <select id="reels-theme">
@@ -199,8 +210,19 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
           <option value="dark">⚫ Gelap + Orange</option>
         </select>
       </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>🎵 Background music</label>
+        <select id="reels-music">
+          <option value="none">Tanpa musik</option>
+          <option value="upbeat" selected>🎶 Upbeat (energik)</option>
+          <option value="calm">🎵 Calm (tenang)</option>
+          <option value="corporate">💼 Corporate (profesional)</option>
+          <option value="inspiring">✨ Inspiring (motivasi)</option>
+        </select>
+      </div>
     </div>
     <button class="btn btn-ig btn-full" onclick="runReels()" id="reels-btn">🎬 Generate Video Reels</button>
+    <p style="font-size:11px;color:#aaa;margin-top:8px;">💡 Musik dibuat otomatis via Web Audio API — tidak perlu file musik eksternal</p>
   </div>
 
   <div class="progress" id="reels-progress">
@@ -477,6 +499,8 @@ async function runReels() {
   const token=localStorage.getItem('ap_s-token'), igId=localStorage.getItem('ap_s-igid');
   const slideCount=parseInt(document.getElementById('reels-slides').value);
   const themeKey=document.getElementById('reels-theme').value;
+  const secPerSlide=parseInt(document.getElementById('reels-duration').value);
+  const musicType=document.getElementById('reels-music').value;
 
   document.getElementById('reels-progress').style.display='block';
   document.getElementById('reels-result').style.display='none';
@@ -494,7 +518,7 @@ async function runReels() {
   setStep('rs-video','rd-video','rt-video','active','⏳','Render video slide...');
   let videoIsMP4 = false;
   try{
-    const result = await genReelsVideo(cmd,slideCount,themeKey);
+    const result = await genReelsVideo(cmd,slideCount,themeKey,secPerSlide,musicType);
     reelsBlobUrl = result.url;
     videoIsMP4 = result.isMP4;
     setStep('rs-video','rd-video','rt-video','done','✓',`Video selesai (${videoIsMP4?'MP4':'WebM — akan diconvert'})`);
@@ -745,7 +769,7 @@ async function genImage(cmd) {
 }
 
 // ===================== GENERATE REELS VIDEO =====================
-async function genReelsVideo(cmd, slideCount, themeKey) {
+async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3, musicType='upbeat') {
   const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
   const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
   const isDoc=cmd.toLowerCase().includes('dokumen');
@@ -790,8 +814,49 @@ async function genReelsVideo(cmd, slideCount, themeKey) {
   const slides=allSlides.slice(0,slideCount);
   const canvas=document.createElement('canvas'); canvas.width=1080; canvas.height=1920;
   const ctx=canvas.getContext('2d');
-  const fps=30; const secPerSlide=2;
+  const fps=30;
   const totalFrames=slides.length*secPerSlide*fps;
+
+  // === SETUP MUSIK via Web Audio API ===
+  let audioStream = null;
+  let audioCtx = null;
+  if(musicType !== 'none') {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = audioCtx.createMediaStreamDestination();
+      audioStream = dest.stream;
+
+      const totalDuration = slides.length * secPerSlide;
+
+      // Generate musik sesuai tipe
+      const musicParams = {
+        upbeat:    { notes:[523,659,784,1047,784,659,523,440], bpm:140, wave:'square', gain:0.08 },
+        calm:      { notes:[261,294,329,349,392,440,494,523], bpm:70,  wave:'sine',   gain:0.06 },
+        corporate: { notes:[440,494,523,587,659,698,784,880], bpm:100, wave:'triangle',gain:0.07 },
+        inspiring: { notes:[349,392,440,523,587,659,784,880], bpm:110, wave:'sine',   gain:0.09 },
+      };
+      const p = musicParams[musicType] || musicParams.upbeat;
+      const beatDur = 60 / p.bpm;
+      let t = audioCtx.currentTime + 0.1;
+
+      // Buat melodi loop
+      while(t < audioCtx.currentTime + totalDuration + 1) {
+        p.notes.forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          osc.connect(gainNode); gainNode.connect(dest);
+          osc.type = p.wave;
+          osc.frequency.value = freq;
+          gainNode.gain.setValueAtTime(0, t + i*beatDur);
+          gainNode.gain.linearRampToValueAtTime(p.gain, t + i*beatDur + 0.02);
+          gainNode.gain.linearRampToValueAtTime(0, t + i*beatDur + beatDur*0.8);
+          osc.start(t + i*beatDur);
+          osc.stop(t + i*beatDur + beatDur);
+        });
+        t += p.notes.length * beatDur;
+      }
+    } catch(e) { audioStream = null; }
+  }
 
   // Pilih format terbaik — prefer MP4 untuk kompatibilitas Instagram
   const mimeTypes = [
@@ -805,14 +870,24 @@ async function genReelsVideo(cmd, slideCount, themeKey) {
   const mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m));
   if(!mimeType) throw new Error('Browser tidak support video recording. Gunakan Chrome terbaru.');
 
-  const stream=canvas.captureStream(fps);
-  const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:4000000});
+  // Gabungkan stream video + audio
+  const videoStream = canvas.captureStream(fps);
+  let combinedStream;
+  if(audioStream) {
+    const tracks = [...videoStream.getTracks(), ...audioStream.getTracks()];
+    combinedStream = new MediaStream(tracks);
+  } else {
+    combinedStream = videoStream;
+  }
+
+  const recorder=new MediaRecorder(combinedStream,{mimeType,videoBitsPerSecond:4000000});
   const chunks=[];
   recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
   const isMP4 = mimeType.includes('mp4');
 
   return new Promise((resolve,reject)=>{
     recorder.onstop=()=>{
+      if(audioCtx) audioCtx.close();
       const blobType = isMP4 ? 'video/mp4' : 'video/webm';
       const blob=new Blob(chunks,{type:blobType});
       resolve({url: URL.createObjectURL(blob), isMP4});
