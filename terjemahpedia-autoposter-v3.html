@@ -285,11 +285,35 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
   </div>
 
   <div class="card">
+    <div class="card-title">🤖 Anthropic API Key (Caption AI)</div>
+    <div class="field">
+      <label>API Key</label>
+      <div style="display:flex;gap:6px;">
+        <input type="password" id="s-anthropic" placeholder="sk-ant-api03-..." style="flex:1;">
+        <button class="btn" style="padding:9px;" onclick="toggleAnthropic()">👁️</button>
+      </div>
+      <p class="hint">Dari <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key. Opsional — tanpa ini caption pakai template otomatis.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-dark" onclick="saveAnthropic()">💾 Simpan API Key</button>
+      <span id="anthropic-st" style="font-size:12px;"></span>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title">🖼️ Upload Foto (ImgBB — gratis)</div>
     <div class="field">
       <label>ImgBB API Key</label>
-      <input type="password" id="s-imgbb" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      <div style="display:flex;gap:6px;">
+        <input type="password" id="s-imgbb" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" style="flex:1;">
+        <button class="btn" style="padding:9px;" onclick="toggleImgbb()">👁️</button>
+      </div>
       <p class="hint">Daftar gratis di <a href="https://api.imgbb.com" target="_blank">api.imgbb.com</a> → Get API key</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-dark" onclick="saveImgbb()">💾 Simpan API Key</button>
+      <button class="btn" onclick="testImgbb()">🔌 Test ImgBB</button>
+      <span id="imgbb-st" style="font-size:12px;"></span>
     </div>
   </div>
 
@@ -354,16 +378,16 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
-  // Default cloud name
   const cn=document.getElementById('s-cloud-name');
   if(cn&&!cn.value) cn.value='di5bhfcl2';
   renderHistory();
   const t=localStorage.getItem('ap_s-token'), id=localStorage.getItem('ap_s-igid');
   if(t&&id) document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Token tersimpan</span>';
+  if(localStorage.getItem('ap_s-anthropic')) document.getElementById('anthropic-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan</span>';
 };
 
 // ===================== FEED =====================
@@ -489,7 +513,7 @@ async function runReels() {
       resetBtn('reels-btn','🎬 Generate Video Reels'); return;
     }
 
-    setStep('rs-post','rd-post','rt-post','active','⏳','Posting ke Reels...');
+    setStep('rs-post','rd-post','rt-post','active','⏳','Posting ke Reels (menunggu processing video 30-60 detik)...');
     try{
       await postIG(token,igId,pubUrl,reelsCaption,'video');
       setStep('rs-post','rd-post','rt-post','done','✓','Berhasil diposting ke Reels! 🎉');
@@ -542,6 +566,45 @@ function editReelsCaption(){ const n=prompt('Edit caption:',reelsCaption);if(n!=
 
 // ===================== GENERATE CAPTION =====================
 async function genCaption(cmd, type) {
+  const anthropicKey = localStorage.getItem('ap_s-anthropic');
+
+  // Pakai Anthropic AI kalau ada key
+  if(anthropicKey) {
+    try {
+      const isVideo = type === 'reels';
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 800,
+          messages: [{
+            role: 'user',
+            content: `Buat caption Instagram yang menarik dan engaging berdasarkan perintah ini: "${cmd}"
+
+Ketentuan:
+- Bahasa Indonesia yang natural dan friendly
+- 2-3 paragraf pendek yang engaging
+- Call to action yang kuat
+- 15-20 hashtag relevan di bagian akhir
+- Sertakan nomor kontak jika ada dalam perintah
+- Gunakan emoji secukupnya
+${isVideo ? '- Tambahkan "🎬 Tonton sampai habis!" di awal' : ''}
+
+Langsung tulis captionnya saja tanpa label atau penjelasan.`
+          }]
+        })
+      });
+      const data = await res.json();
+      if(!data.error) return data.content.map(c => c.text || '').join('');
+    } catch(e) { /* fallback ke template */ }
+  }
+
+  // Template fallback (tanpa API key)
   const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
   const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
   const isDoc=cmd.toLowerCase().includes('dokumen')||cmd.toLowerCase().includes('resmi');
@@ -862,10 +925,53 @@ async function testCloudinary() {
   }
 }
 
-function toggleSecret() {
-  const i = document.getElementById('s-cloud-secret');
-  if(i) i.type = i.type === 'password' ? 'text' : 'password';
+function saveAnthropic() {
+  const v = document.getElementById('s-anthropic').value.trim();
+  if(!v) { document.getElementById('anthropic-st').innerHTML='<span style="color:#E24B4A">⚠️ Isi API key dulu</span>'; return; }
+  localStorage.setItem('ap_s-anthropic', v);
+  document.getElementById('anthropic-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan!</span>';
+  setTimeout(()=>document.getElementById('anthropic-st').innerHTML='', 2000);
 }
+
+function toggleAnthropic() {
+  const i = document.getElementById('s-anthropic');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+
+function saveImgbb() {
+  const v = document.getElementById('s-imgbb').value.trim();
+  if(!v) { document.getElementById('imgbb-st').innerHTML='<span style="color:#E24B4A">⚠️ Isi API key dulu</span>'; return; }
+  localStorage.setItem('ap_s-imgbb', v);
+  document.getElementById('imgbb-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan!</span>';
+  setTimeout(()=>document.getElementById('imgbb-st').innerHTML='', 2000);
+}
+
+async function testImgbb() {
+  const key = document.getElementById('s-imgbb').value.trim() || localStorage.getItem('ap_s-imgbb');
+  const s = document.getElementById('imgbb-st');
+  if(!key) { s.innerHTML='<span style="color:#E24B4A">⚠️ Isi API key dulu</span>'; return; }
+  s.innerHTML='<span class="spinner"></span> Testing...';
+  try {
+    const testBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==').then(r=>r.blob());
+    const fd = new FormData();
+    fd.append('key', key);
+    fd.append('image', 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+    const r = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body:fd });
+    const d = await r.json();
+    if(d.success) {
+      s.innerHTML='<span style="color:#3b6d11">✅ ImgBB terhubung!</span>';
+      localStorage.setItem('ap_s-imgbb', key);
+    } else throw new Error(d.error?.message || 'API key tidak valid');
+  } catch(e) { s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`; }
+}
+
+function toggleImgbb() {
+  const i = document.getElementById('s-imgbb');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+
 
 // ===================== POST TO INSTAGRAM =====================
 async function postIG(token,igId,mediaUrl,caption,type) {
@@ -873,13 +979,28 @@ async function postIG(token,igId,mediaUrl,caption,type) {
   if(type==='video'){body.video_url=mediaUrl;body.media_type='REELS';}
   else{body.image_url=mediaUrl;}
 
+  // Step 1: Buat media container
   const r1=await fetch(`https://graph.facebook.com/v19.0/${igId}/media`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d1=await r1.json();
   if(d1.error) throw new Error(d1.error.message);
+  const creationId=d1.id;
 
-  if(type==='video') await new Promise(r=>setTimeout(r,15000));
+  // Step 2: Untuk video, poll status sampai FINISHED
+  if(type==='video') {
+    let status='';
+    for(let i=0;i<30;i++) {
+      await new Promise(r=>setTimeout(r,5000)); // tunggu 5 detik tiap poll
+      const rp=await fetch(`https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${token}`);
+      const dp=await rp.json();
+      status=dp.status_code||'';
+      if(status==='FINISHED') break;
+      if(status==='ERROR') throw new Error('Video processing gagal di Instagram. Coba lagi.');
+    }
+    if(status!=='FINISHED') throw new Error('Timeout — video terlalu lama diproses. Coba lagi.');
+  }
 
-  const r2=await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creation_id:d1.id,access_token:token})});
+  // Step 3: Publish
+  const r2=await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creation_id:creationId,access_token:token})});
   const d2=await r2.json();
   if(d2.error) throw new Error(d2.error.message);
   return d2.id;
@@ -928,7 +1049,7 @@ function renderHistory(){
 function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
 
 function saveSettings(){
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
