@@ -294,12 +294,32 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
   </div>
 
   <div class="card">
-    <div class="card-title">🎬 Upload Video Reels (Catbox.moe — gratis, tanpa daftar)</div>
-    <div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:8px;padding:12px;font-size:13px;color:#1a4a8a;margin-bottom:12px;line-height:1.7;">
-      ✅ <strong>Catbox.moe gratis selamanya</strong> — tidak perlu daftar, tidak perlu API key.<br>
-      Video otomatis diupload dan dapat URL publik untuk posting ke Reels.
+    <div class="card-title">🎬 Upload Video Reels (Cloudinary)</div>
+    <div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:8px;padding:12px;font-size:13px;color:#1a4a8a;margin-bottom:14px;line-height:1.7;">
+      Cloud name Anda: <strong>di5bhfcl2</strong> — sudah terdeteksi otomatis! Isi API Key & Secret di bawah.
     </div>
-    <p class="hint">Tidak ada yang perlu diisi — sudah otomatis! 🎉</p>
+    <div class="field">
+      <label>Cloud Name</label>
+      <input type="text" id="s-cloud-name" placeholder="di5bhfcl2" value="di5bhfcl2">
+      <p class="hint">Terlihat di kiri atas dashboard Cloudinary</p>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>API Key</label>
+        <input type="text" id="s-cloud-key" placeholder="942226935671998">
+        <p class="hint">Dari Settings → API Keys</p>
+      </div>
+      <div class="field">
+        <label>API Secret</label>
+        <div style="display:flex;gap:6px;">
+          <input type="password" id="s-cloud-secret" placeholder="••••••••••••••••••••" style="flex:1;">
+          <button class="btn" style="padding:9px;" onclick="toggleSecret()">👁️</button>
+        </div>
+        <p class="hint">Dari Settings → API Keys → klik Show</p>
+      </div>
+    </div>
+    <button class="btn btn-dark" onclick="testCloudinary()" style="margin-bottom:8px;">🔌 Test Cloudinary</button>
+    <span id="cloud-st" style="font-size:12px;margin-left:8px;"></span>
   </div>
 
   <div class="card">
@@ -308,7 +328,7 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       <li>Isi <strong>Access Token</strong> dari Meta Graph API Explorer</li>
       <li>Isi <strong>Instagram Account ID</strong> (17 digit) dari Meta Business Suite</li>
       <li>Daftar <a href="https://api.imgbb.com" target="_blank" style="color:#185fa5;">ImgBB</a> → isi API key untuk posting foto</li>
-      <li>Video Reels → upload otomatis via Catbox.moe (tanpa setup)</li>
+      <li>Isi <strong>Cloud Name, API Key & Secret</strong> Cloudinary untuk upload video Reels</li>
       <li>Klik <strong>Simpan</strong> → Test koneksi → siap!</li>
     </ol>
   </div>
@@ -332,8 +352,9 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb'].forEach(id=>{
-    const v=localStorage.getItem('ap_'+id); if(v) document.getElementById(id).value=v;
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-key','s-cloud-secret'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
   renderHistory();
   const t=localStorage.getItem('ap_s-token'), id=localStorage.getItem('ap_s-igid');
@@ -454,7 +475,7 @@ async function runReels() {
     setStep('rs-upload','rd-upload','rt-upload','active','⏳','Upload ke Catbox.moe...');
     let pubUrl='';
     try{
-      pubUrl = await uploadCatbox(reelsBlobUrl);
+      pubUrl = await uploadCloudinary(reelsBlobUrl);
       setStep('rs-upload','rd-upload','rt-upload','done','✓','Upload selesai: '+pubUrl.slice(0,40)+'...');
     }catch(e){
       setStep('rs-upload','rd-upload','rt-upload','err','✗','Gagal upload: '+e.message);
@@ -499,7 +520,7 @@ async function manualPostReels() {
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Uploading & Posting...';
   document.getElementById('reels-status').innerHTML='<div class="status-box status-load">⏳ Upload & posting Reels...</div>';
   try{
-    const pubUrl=await uploadCatbox(reelsBlobUrl);
+    const pubUrl=await uploadCloudinary(reelsBlobUrl);
     await postIG(token,igId,pubUrl,reelsCaption,'video');
     document.getElementById('reels-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Reels!</div>';
     addHistory(document.getElementById('reels-cmd').value,'','posted','reels');
@@ -792,15 +813,65 @@ async function uploadImgBB(base64) {
   throw new Error('Upload ImgBB gagal: '+(d.error?.message||'Unknown'));
 }
 
-async function uploadCatbox(blobUrl) {
-  const blob=await fetch(blobUrl).then(r=>r.blob());
-  const fd=new FormData();
-  fd.append('reqtype','fileupload');
-  fd.append('fileToUpload',blob,'reels.webm');
-  const r=await fetch('https://catbox.moe/user/api.php',{method:'POST',body:fd});
-  const url=await r.text();
-  if(url.startsWith('https://')) return url.trim();
-  throw new Error('Upload Catbox gagal: '+url);
+async function uploadCloudinary(blobUrl) {
+  const cloudName = localStorage.getItem('ap_s-cloud-name') || 'di5bhfcl2';
+  const apiKey = localStorage.getItem('ap_s-cloud-key');
+  const apiSecret = localStorage.getItem('ap_s-cloud-secret');
+  if(!apiKey || !apiSecret) throw new Error('Cloudinary API Key & Secret belum diisi di Pengaturan');
+
+  const blob = await fetch(blobUrl).then(r => r.blob());
+
+  // Generate signature
+  const timestamp = Math.floor(Date.now() / 1000);
+  const paramsToSign = `timestamp=${timestamp}`;
+  const signature = await generateCloudinarySignature(paramsToSign, apiSecret);
+
+  const fd = new FormData();
+  fd.append('file', blob, 'reels.webm');
+  fd.append('api_key', apiKey);
+  fd.append('timestamp', timestamp);
+  fd.append('signature', signature);
+  fd.append('resource_type', 'video');
+
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+    method: 'POST', body: fd
+  });
+  const d = await r.json();
+  if(d.secure_url) return d.secure_url;
+  throw new Error('Upload Cloudinary gagal: ' + (d.error?.message || JSON.stringify(d)));
+}
+
+async function generateCloudinarySignature(paramsToSign, apiSecret) {
+  const msgBuffer = new TextEncoder().encode(paramsToSign + apiSecret);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function testCloudinary() {
+  const cloudName = document.getElementById('s-cloud-name').value || localStorage.getItem('ap_s-cloud-name');
+  const apiKey = document.getElementById('s-cloud-key').value || localStorage.getItem('ap_s-cloud-key');
+  const apiSecret = document.getElementById('s-cloud-secret').value || localStorage.getItem('ap_s-cloud-secret');
+  const s = document.getElementById('cloud-st');
+  if(!cloudName || !apiKey || !apiSecret) { s.innerHTML='<span style="color:#E24B4A">⚠️ Isi semua field Cloudinary dulu</span>'; return; }
+  s.innerHTML='<span class="spinner"></span> Testing...';
+  try {
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/resources/video?max_results=1`, {
+      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':' + apiSecret) }
+    });
+    const d = await r.json();
+    if(d.error) throw new Error(d.error.message);
+    s.innerHTML='<span style="color:#3b6d11">✅ Cloudinary terhubung!</span>';
+    // Auto save
+    localStorage.setItem('ap_s-cloud-name', cloudName);
+    localStorage.setItem('ap_s-cloud-key', apiKey);
+    localStorage.setItem('ap_s-cloud-secret', apiSecret);
+  } catch(e) { s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`; }
+}
+
+function toggleSecret() {
+  const i = document.getElementById('s-cloud-secret');
+  i.type = i.type === 'password' ? 'text' : 'password';
 }
 
 // ===================== POST TO INSTAGRAM =====================
@@ -864,7 +935,10 @@ function renderHistory(){
 function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
 
 function saveSettings(){
-  ['s-token','s-igid','s-imgbb'].forEach(id=>{const v=document.getElementById(id).value.trim();if(v)localStorage.setItem('ap_'+id,v);});
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-key','s-cloud-secret'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
+  });
   document.getElementById('conn-st').innerHTML='<span style="color:#3b6d11">✅ Tersimpan!</span>';
   setTimeout(()=>document.getElementById('conn-st').innerHTML='',2000);
 }
