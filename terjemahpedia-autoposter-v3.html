@@ -1355,19 +1355,23 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   };
 
   if(layoutIdx<=7){
-    // Foto PNG: besar, rata kanan-bawah, tidak perlu clip
+    // Foto PNG: BESAR, rata kanan-bawah, isi penuh sisi kanan
     const ir=photoImg.width/photoImg.height;
-    // Tinggi foto = 90% area konten
-    let dh=FY*0.9, dw=dh*ir;
-    // Kalau lebar melebihi 65% W, sesuaikan
-    if(dw>W*0.65){dw=W*0.65;dh=dw/ir;}
-    const dx=W-dw; // rata kanan
-    const dy=FY-dh; // rata bawah
+    // Tinggi foto = full area konten
+    let dh=FY, dw=dh*ir;
+    // Minimal 55% lebar W
+    if(dw<W*0.55){dw=W*0.55;dh=dw/ir;}
+    // Cap maksimal 72% W
+    if(dw>W*0.72){dw=W*0.72;dh=dw/ir;}
+    // Rata kanan, rata bawah — nempel tepi kanan
+    const dx=W-dw;
+    const dy=FY-dh;
     ctx.drawImage(photoImg,dx,dy,dw,dh);
 
-    // Zona teks: gunakan ruang hingga tepi kiri foto yang TIDAK transparan
-    // Untuk PNG transparan, teks boleh lebih ke kanan — gunakan 62% W
-    const safeW=Math.round(W*0.62);
+    // Zona teks aman: tidak masuk ke area MODEL (bukan transparan)
+    // Model biasanya mulai ~35% dari kiri foto PNG
+    // Jadi safe text zone = dx + dw*0.35
+    const safeW=Math.round(dx+dw*0.32);
 
     // Header
     drawLogo(18,18,82);
@@ -1375,7 +1379,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     TX(brand,128,50,17,t.ac);
     TX('Jasa Terjemah Pro',128,70,13,t.sm,'left',false);
     TX('SOLUSI TERJEMAHAN TERPERCAYA',128,90,11,t.sm);
-    drawAZ(Math.min(safeW-46,520),82,38);
+    drawAZ(Math.min(safeW-46,500),82,38);
 
     // Judul
     const fs=drawTitle(18,188,safeW-18);
@@ -1398,7 +1402,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     const badgeR=44;
     drawBadge(18+badgeR,infoY+badgeR,badgeR);
     const lbX=18+badgeR*2+14;
-    const lbW=Math.min(safeW-lbX-8,340);
+    const lbW=Math.min(safeW-lbX-8,360);
     drawLangBox(lbX,infoY,lbW,196);
 
     drawFooter();
