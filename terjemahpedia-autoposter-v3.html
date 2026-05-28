@@ -127,34 +127,45 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
     </div>
 
     <!-- Upload foto & logo -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <!-- Foto model -->
-      <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-photo-input').click()" id="photo-drop">
-        <input type="file" id="feed-photo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('photo',this)">
-        <div id="photo-preview" style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
-          <div style="text-align:center;color:#aaa;">
-            <div style="font-size:32px;">👤</div>
-            <div style="font-size:12px;margin-top:4px;">Upload Foto Model</div>
-            <div style="font-size:11px;color:#bbb;">PNG transparan lebih bagus</div>
+      <div>
+        <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-photo-input').click()" id="photo-drop">
+          <input type="file" id="feed-photo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('photo',this)">
+          <div id="photo-preview" style="width:100%;height:110px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
+            <div style="text-align:center;color:#aaa;">
+              <div style="font-size:28px;">👤</div>
+              <div style="font-size:12px;margin-top:4px;">Upload Foto Model</div>
+            </div>
           </div>
+          <div id="photo-status" style="font-size:11px;color:#888;margin-top:5px;"></div>
         </div>
-        <div id="photo-status" style="font-size:11px;color:#888;margin-top:6px;"></div>
+        <button class="btn" onclick="generateAIPhoto()" id="ai-photo-btn" style="width:100%;margin-top:6px;justify-content:center;font-size:12px;padding:8px;">
+          🤖 Generate Foto AI (Gratis)
+        </button>
       </div>
       <!-- Logo -->
-      <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-logo-input').click()" id="logo-drop">
-        <input type="file" id="feed-logo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('logo',this)">
-        <div id="logo-preview" style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
-          <div style="text-align:center;color:#aaa;">
-            <div style="font-size:32px;">🔲</div>
-            <div style="font-size:12px;margin-top:4px;">Upload Logo</div>
-            <div style="font-size:11px;color:#bbb;">PNG transparan</div>
+      <div>
+        <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-logo-input').click()" id="logo-drop">
+          <input type="file" id="feed-logo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('logo',this)">
+          <div id="logo-preview" style="width:100%;height:110px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
+            <div style="text-align:center;color:#aaa;">
+              <div style="font-size:28px;">🔲</div>
+              <div style="font-size:12px;margin-top:4px;">Upload Logo</div>
+            </div>
           </div>
+          <div id="logo-status" style="font-size:11px;color:#888;margin-top:5px;"></div>
         </div>
-        <div id="logo-status" style="font-size:11px;color:#888;margin-top:6px;"></div>
+        <div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center;">PNG transparan lebih bagus</div>
       </div>
     </div>
-    <p style="font-size:11px;color:#aaa;margin-bottom:14px;">📸 Foto & logo tersimpan di browser — tidak perlu upload ulang setiap kali</p>
 
+    <!-- AI Generate Status -->
+    <div id="ai-gen-status" style="display:none;background:#f0f7ff;border:1px solid #c8e0ff;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#1a4a8a;">
+      <span id="ai-gen-text">🤖 Generating foto AI...</span>
+    </div>
+
+    <p style="font-size:11px;color:#aaa;margin-bottom:14px;">📸 Foto & logo tersimpan di browser — tidak perlu upload ulang setiap kali</p>
     <button class="btn btn-ig btn-full" onclick="runFeed()" id="feed-btn">🚀 Generate & Post ke Feed</button>
   </div>
 
@@ -345,6 +356,20 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
   </div>
 
   <div class="card">
+    <div class="card-title">🤖 Hugging Face Token (AI Generate Foto)</div>
+    <div class="field">
+      <label>HF Token (opsional)</label>
+      <div style="display:flex;gap:6px;">
+        <input type="password" id="s-hf-key" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx" style="flex:1;">
+        <button class="btn" style="padding:9px;" onclick="toggleHF()">👁️</button>
+      </div>
+      <p class="hint">Opsional tapi lebih stabil. Daftar gratis di <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a> → New token → Read</p>
+    </div>
+    <button class="btn btn-dark" onclick="saveHF()">💾 Simpan Token</button>
+    <span id="hf-st" style="font-size:12px;margin-left:8px;"></span>
+  </div>
+
+  <div class="card">
     <div class="card-title">🤖 Anthropic API Key (Caption AI)</div>
     <div class="field">
       <label>API Key</label>
@@ -438,7 +463,7 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic','s-hf-key'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
@@ -1131,38 +1156,34 @@ async function genImage(cmd) {
 // ===================== TEMPLATE PROFESIONAL DENGAN FOTO =====================
 async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, photoImg, logoImg, rand, website='www.terjemahpedia.com', email='info@terjemahpedia.com', brand='TERJEMAHPEDIA'}) {
   const W=1080, H=1080;
-  const themeIdx = rand(0,5);
-  const layoutIdx = rand(0,2);
 
-  const themes = [
-    {bg:'#FFFFFF',accent:'#1B6B3A',accent2:'#145C30',gold:'#F5C518',text:'#111',sub:'#444',light:'#EAF5EE',footerBg:'#1B6B3A',dark:false},
-    {bg:'#FFFFFF',accent:'#1A3E8C',accent2:'#0F2D6B',gold:'#4FC3F7',text:'#111',sub:'#444',light:'#E3EEFF',footerBg:'#1A3E8C',dark:false},
-    {bg:'#FFFFFF',accent:'#B71C1C',accent2:'#7F0000',gold:'#FFB300',text:'#111',sub:'#444',light:'#FDECEA',footerBg:'#B71C1C',dark:false},
-    {bg:'#FAFAFA',accent:'#2C3E50',accent2:'#1A252F',gold:'#27AE60',text:'#111',sub:'#444',light:'#ECF0F1',footerBg:'#2C3E50',dark:false},
-    {bg:'#FFFFFF',accent:'#6A1B9A',accent2:'#4A0072',gold:'#FFD600',text:'#111',sub:'#444',light:'#F3E5F5',footerBg:'#6A1B9A',dark:false},
-    {bg:'#050A14',accent:'#C9A84C',accent2:'#A07830',gold:'#FFE082',text:'#FFF',sub:'rgba(255,255,255,0.7)',light:'rgba(201,168,76,0.1)',footerBg:'#0D1520',dark:true},
+  // Pilih tema warna (6 variasi)
+  const themes=[
+    {bg:'#FFFFFF',ac:'#1B6B3A',ac2:'#145C30',gd:'#E8B800',ft:'#1B6B3A',tx:'#111',sm:'#444',lt:'#EAF5EE'},
+    {bg:'#FFFFFF',ac:'#1A3E8C',ac2:'#0F2D6B',gd:'#2196F3',ft:'#1A3E8C',tx:'#111',sm:'#444',lt:'#E3EEFF'},
+    {bg:'#FFFFFF',ac:'#B71C1C',ac2:'#7F0000',gd:'#FF8F00',ft:'#B71C1C',tx:'#111',sm:'#444',lt:'#FDECEA'},
+    {bg:'#FFFFFF',ac:'#4A148C',ac2:'#38006B',gd:'#FFD600',ft:'#4A148C',tx:'#111',sm:'#444',lt:'#F3E5F5'},
+    {bg:'#FFFFFF',ac:'#004D40',ac2:'#00251A',gd:'#FFB300',ft:'#004D40',tx:'#111',sm:'#444',lt:'#E0F2F1'},
+    {bg:'#0A0E1A',ac:'#C9A84C',ac2:'#8B6914',gd:'#C9A84C',ft:'#0D1626',tx:'#FFF',sm:'rgba(255,255,255,0.65)',lt:'rgba(201,168,76,0.12)'},
   ];
-  const t = themes[themeIdx];
+  const t=themes[rand(0,5)];
+  const dk=t.bg==='#0A0E1A';
 
-  const services = isDoc
-    ? [['🎯','AKURAT & BERKUALITAS','Hasil terjemahan tepat, jelas, dan sesuai konteks.'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa mengurangi kualitas.'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen Anda adalah prioritas kami.'],['📋','BERBAGAI JENIS DOKUMEN','Dokumen pribadi, legal, akademik, bisnis, dll.']]
-    : isMulti
-    ? [['🎯','AKURAT & BERKUALITAS','Terjemahan tepat sesuai konteks & budaya.'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa mengurangi kualitas.'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen Anda prioritas kami.'],['🌐','50+ BAHASA TERSEDIA','Inggris, Arab, Mandarin, Jepang, Korea, dll.']]
-    : [['🎯','AKURAT & BERKUALITAS','Hasil terjemahan tepat, jelas, dan sesuai konteks.'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa mengurangi kualitas.'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen Anda adalah prioritas kami.'],['📋','BERBAGAI JENIS DOKUMEN','Dokumen pribadi, legal, akademik, bisnis, dll.']];
+  // Data konten
+  const svcs=isDoc
+    ?[['🎯','AKURAT & BERKUALITAS','Hasil tepat, jelas, sesuai konteks'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa kurangi kualitas'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen prioritas kami'],['📋','BERBAGAI JENIS DOKUMEN','Pribadi, legal, akademik, bisnis & lainnya']]
+    :[['🎯','AKURAT & BERKUALITAS','Hasil tepat, jelas, sesuai konteks'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa kurangi kualitas'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen prioritas kami'],['📋','BERBAGAI JENIS DOKUMEN','Pribadi, legal, akademik, bisnis & lainnya']];
 
-  const langs = [['gb','Inggris'],['sa','Arab'],['cn','Mandarin'],['de','Jerman'],['jp','Jepang'],['fr','Prancis'],['kr','Korea'],['','dan lainnya']];
-  const flagColors = {gb:'#012169',sa:'#006C35',cn:'#DE2910',de:'#000',jp:'#BC002D',fr:'#002395',kr:'#003478'};
-
-  // ===== HELPERS =====
-  const FR=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h);};
+  // ── HELPERS ──────────────────────────────────────────────
+  const FR=(x,y,w,h,c)=>{if(w>0&&h>0){ctx.fillStyle=c;ctx.fillRect(x,y,w,h);}};
   const RR=(x,y,w,h,r,c)=>{ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();};
-  const TX=(txt,x,y,sz,c,al='left',bold=true)=>{ctx.fillStyle=c;ctx.font=`${bold?'bold':'normal'} ${sz}px Arial`;ctx.textAlign=al;ctx.fillText(String(txt),x,y);};
-  const STROKE_RR=(x,y,w,h,r,c,lw=2)=>{ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.stroke();};
+  const TX=(s,x,y,sz,c,al='left',b=true)=>{ctx.fillStyle=c;ctx.font=`${b?'bold':'normal'} ${sz}px Arial`;ctx.textAlign=al;ctx.fillText(String(s),x,y);};
+  const LN=(x,y,w,c,h=2)=>{FR(x,y,w,h,c);};
 
-  const drawPhoto=(x,y,w,h,clipFn=null)=>{
+  // Gambar foto (crop cover)
+  const drawPic=(x,y,w,h,clip)=>{
     ctx.save();
-    if(clipFn){ctx.beginPath();clipFn();ctx.clip();}
-    else{ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();}
+    ctx.beginPath();clip();ctx.clip();
     const r=photoImg.width/photoImg.height,ar=w/h;
     let sw,sh,sx,sy;
     if(r>ar){sh=photoImg.height;sw=sh*ar;sx=(photoImg.width-sw)/2;sy=0;}
@@ -1171,224 +1192,151 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     ctx.restore();
   };
 
-  const drawLogoBox=(x,y,sz)=>{
-    RR(x,y,sz,sz,sz*0.12,t.accent);
-    // Border circle
-    ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz*0.38,0,Math.PI*2);ctx.stroke();
+  // Logo box
+  const drawLogo=(x,y,sz)=>{
+    RR(x,y,sz,sz,sz*0.14,t.ac);
+    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz*0.36,0,Math.PI*2);ctx.stroke();
     if(logoImg){
-      ctx.save();ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz*0.36,0,Math.PI*2);ctx.clip();
-      const lr=logoImg.width/logoImg.height;
-      const iw=sz*0.7,ih=iw/lr;
+      ctx.save();ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz*0.34,0,Math.PI*2);ctx.clip();
+      const lr=logoImg.width/logoImg.height,iw=sz*0.65,ih=iw/lr;
       ctx.drawImage(logoImg,x+sz/2-iw/2,y+sz/2-ih/2,iw,ih);
       ctx.restore();
     } else {
-      TX(brand[0],x+sz/2,y+sz*0.62,sz*0.4,'#fff','center');
-    }
-    TX(brand,x+sz/2,y+sz+16,13,t.accent,'center');
-  };
-
-  const drawTransIcon=(cx,cy,sz)=>{
-    // Box A
-    RR(cx-sz*0.55,cy-sz*0.55,sz*0.85,sz*0.85,sz*0.12,t.accent);
-    TX('A',cx-sz*0.13,cy+sz*0.05,sz*0.55,'#fff','center');
-    // Box 文
-    RR(cx-sz*0.1,cy-sz*0.1,sz*0.85,sz*0.85,sz*0.12,t.accent2||'#0F4C1A');
-    TX('文',cx+sz*0.32,cy+sz*0.42,sz*0.45,'#fff','center');
-    // Arrow
-    ctx.strokeStyle='#fff';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(cx+sz*0.05,cy-sz*0.18);ctx.lineTo(cx+sz*0.22,cy-sz*0.35);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx+sz*0.22,cy-sz*0.35);ctx.lineTo(cx+sz*0.15,cy-sz*0.22);ctx.stroke();
-  };
-
-  const drawServiceItem=(x,y,icon,title,desc)=>{
-    // Icon circle
-    ctx.beginPath();ctx.arc(x+22,y+22,22,0,Math.PI*2);ctx.fillStyle=t.light;ctx.fill();
-    ctx.beginPath();ctx.arc(x+22,y+22,22,0,Math.PI*2);ctx.strokeStyle=t.accent+'44';ctx.lineWidth=1.5;ctx.stroke();
-    TX(icon,x+22,y+30,18,t.accent,'center',false);
-    TX(title,x+54,y+18,17,t.text,'left',true);
-    TX(desc,x+54,y+36,13,t.sub,'left',false);
-    // Second line if needed
-    if(desc.length>35){
-      const words=desc.split(' ');const mid=Math.floor(words.length/2);
-      TX(words.slice(0,mid).join(' '),x+54,y+36,13,t.sub,'left',false);
-      TX(words.slice(mid).join(' '),x+54,y+52,13,t.sub,'left',false);
+      TX(brand[0],x+sz/2,y+sz*0.65,sz*0.42,'#fff','center');
     }
   };
 
-  const drawFlagItem=(x,y,code,name)=>{
-    if(code){
-      RR(x,y,28,20,3,flagColors[code]||t.accent);
-      TX(name,x+34,y+15,14,t.dark?'rgba(255,255,255,0.8)':'#333','left',false);
-    } else {
-      TX('🌏',x,y+15,16,t.accent,'left',false);
-      TX(name,x+24,y+15,14,t.dark?'rgba(255,255,255,0.8)':'#555','left',false);
-    }
+  // Ikon A→文
+  const drawAZ=(cx,cy,sz)=>{
+    RR(cx-sz*.52,cy-sz*.52,sz*.78,sz*.78,sz*.12,t.ac);
+    TX('A',cx-sz*.13,cy+sz*.08,sz*.52,'#fff','center');
+    RR(cx-sz*.06,cy-sz*.06,sz*.78,sz*.78,sz*.12,t.ac2||'#0F4C1A');
+    TX('文',cx+sz*.33,cy+sz*.44,sz*.44,'#fff','center');
+    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(cx+sz*.08,cy-sz*.16);ctx.lineTo(cx+sz*.26,cy-sz*.34);ctx.stroke();
   };
 
-  const drawBadge=(cx,cy,r,mainTxt,subTxt)=>{
-    // Outer ring gold
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=t.gold;ctx.fill();
-    ctx.beginPath();ctx.arc(cx,cy,r-6,0,Math.PI*2);ctx.fillStyle=t.dark?'#1A1A2A':'#fff';ctx.fill();
-    ctx.beginPath();ctx.arc(cx,cy,r-12,0,Math.PI*2);ctx.fillStyle=t.accent;ctx.fill();
-    TX(mainTxt,cx,cy-8,22,'#fff','center');
-    TX(subTxt,cx,cy+14,14,'#fff','center');
-    TX('★ ★ ★',cx,cy+30,10,'#FFD700','center',false);
+  // Ikon layanan (lingkaran outline)
+  const drawSvcIcon=(cx,cy,r,ico)=>{
+    ctx.strokeStyle=t.ac;ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    RR(cx-r,cy-r,r*2,r*2,r,'rgba(0,0,0,0)');
+    TX(ico,cx,cy+8,r*.9,t.ac,'center',false);
   };
 
-  // ===== BG =====
+  // Badge emas 100%
+  const drawBadge=(cx,cy,r)=>{
+    // Outer gold
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=t.gd;ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,r-5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,r-11,0,Math.PI*2);ctx.fillStyle=t.ac;ctx.fill();
+    TX('100%',cx,cy-6,r*.42,'#fff','center');
+    TX('TERJAMIN',cx,cy+10,r*.24,'#fff','center');
+    TX('★★★',cx,cy+24,r*.22,t.gd,'center',false);
+    TX('PROFESIONAL',cx,cy+38,r*.18,'rgba(255,255,255,0.8)','center',false);
+  };
+
+  // ── BACKGROUND ────────────────────────────────────────────
   FR(0,0,W,H,t.bg);
-  // Subtle grid
-  ctx.save();ctx.globalAlpha=0.025;ctx.strokeStyle=t.accent;ctx.lineWidth=1;
-  for(let i=0;i<W;i+=55){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
-  for(let i=0;i<H;i+=55){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+  // Grid halus
+  ctx.save();ctx.globalAlpha=.03;ctx.strokeStyle=t.ac;ctx.lineWidth=1;
+  for(let i=0;i<W;i+=54){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+  for(let i=0;i<H;i+=54){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+  ctx.restore();
+  // Lingkaran dekor kanan atas
+  ctx.save();ctx.globalAlpha=.06;ctx.fillStyle=t.ac;
+  ctx.beginPath();ctx.arc(W,0,380,0,Math.PI*2);ctx.fill();
   ctx.restore();
 
-  // ===== LAYOUT 0 & 1: CLASSIC (mirip referensi utama) =====
-  if(layoutIdx<=1){
-    // Photo kanan
-    drawPhoto(W*0.44,0,W*0.56,H-88);
-    // Gradient overlay
-    const g=ctx.createLinearGradient(0,0,W,0);
-    g.addColorStop(0,t.bg);g.addColorStop(0.43,t.bg);
-    g.addColorStop(0.58,t.bg+(t.dark?'dd':'ee'));
-    g.addColorStop(0.75,'transparent');
-    ctx.fillStyle=g;ctx.fillRect(0,0,W,H-88);
+  // ── FOTO (kanan, full height minus footer) ─────────────────
+  const photoX=Math.round(W*.44);
+  drawPic(photoX,0,W-photoX,H-90,()=>{ctx.rect(photoX,0,W-photoX,H-90);});
+  // Gradient overlay kiri→kanan di area foto
+  const og=ctx.createLinearGradient(photoX,0,W,0);
+  og.addColorStop(0,t.bg);og.addColorStop(.18,t.bg+'f5');
+  og.addColorStop(.42,t.bg+'88');og.addColorStop(.72,'transparent');
+  ctx.fillStyle=og;ctx.fillRect(photoX,0,W-photoX,H-90);
 
-    // World map watermark area kanan atas
-    ctx.save();ctx.globalAlpha=0.07;ctx.fillStyle=t.accent;
-    ctx.beginPath();ctx.arc(W*0.78,100,180,0,Math.PI*2);ctx.fill();
-    ctx.restore();
+  // ── HEADER ROW ─────────────────────────────────────────────
+  drawLogo(22,18,88);
+  LN(124,20,2,t.ac+'44',80);
+  TX(brand,140,50,18,t.ac);
+  TX('Jasa Terjemah Pro',140,72,13,t.sm,'left',false);
+  TX('SOLUSI TERJEMAHAN TERPERCAYA',140,96,13,t.sm);
+  // Trans icon kanan
+  drawAZ(W*.74,88,44);
 
-    // === HEADER ===
-    drawLogoBox(22,18,90);
-    // Divider vertikal
-    FR(130,22,2,86,t.accent+'33');
-    TX('SOLUSI TERJEMAHAN',148,50,17,t.sub,'left',true);
-    TX('TERPERCAYA',148,72,17,t.accent,'left',true);
-    TX('UNTUK SEMUA KEBUTUHAN ANDA',148,94,13,t.sub,'left',false);
-    // Trans icon
-    drawTransIcon(W*0.7,95,48);
-
-    // === JUDUL ===
-    const jy=200;
-    if(diskon){
-      TX('PROMO DISKON',22,jy,52,t.text);
-      TX(diskon+'%',22,jy+64,130,t.accent);
-      TX('SPESIAL!',22,jy+178,44,t.accent2);
-    } else {
-      TX('JASA',22,jy,110,t.text);
-      TX('TERJEMAH',22,jy+112,110,t.accent);
-    }
-
-    // Garis bawah judul
-    FR(22,diskon?jy+218:jy+232,W*0.42,3,t.accent);
-
-    // Tagline
-    const tgy=diskon?jy+236:jy+250;
-    TX('Terjemahan akurat, cepat, dan profesional',22,tgy,19,t.sub,'left',false);
-    TX('untuk berbagai dokumen dan bahasa.',22,tgy+24,19,t.sub,'left',false);
-
-    // === 4 LAYANAN ===
-    const svy=tgy+58;
-    services.forEach((s,i)=>drawServiceItem(22,svy+i*70,s[0],s[1],s[2]));
-
-    // === BADGE 100% ===
-    drawBadge(W*0.58,svy+180,52,'100%','TERJAMIN');
-
-    // === BAHASA LAYANAN ===
-    const langBoxX=W*0.62, langBoxY=svy+100, langBoxW=W*0.36, langBoxH=180;
-    RR(langBoxX,langBoxY,langBoxW,langBoxH,10,t.accent);
-    TX('BAHASA LAYANAN',langBoxX+langBoxW/2,langBoxY+24,15,'#fff','center');
-    FR(langBoxX+10,langBoxY+32,langBoxW-20,2,'rgba(255,255,255,0.3)');
-    langs.forEach((l,i)=>{
-      const lx=langBoxX+12+(i%2)*(langBoxW/2-6);
-      const ly=langBoxY+48+Math.floor(i/2)*32;
-      drawFlagItem(lx,ly,l[0],l[1]);
-      // Override text color for dark box
-      TX(l[1],lx+34,ly+15,13,'rgba(255,255,255,0.9)','left',false);
-    });
-
-    // === FOOTER ===
-    FR(0,H-88,W,88,t.footerBg);
-    FR(0,H-88,W,3,t.gold);
-    // WA icon circle
-    ctx.beginPath();ctx.arc(48,H-44,30,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();
-    TX('📞',48,H-36,24,'#fff','center',false);
-    // Info
-    TX('HUBUNGI KAMI',88,H-64,15,'rgba(255,255,255,0.75)','left',false);
-    TX(phone,88,H-24,46,'#fff','left',true);
-    FR(88,H-70,3,58,t.gold);
-    // Badges kanan
-    const badges=[['⚙️','PROFESIONAL'],['👍','BERKUALITAS'],['🔒','TERJAMIN']];
-    badges.forEach((b,i)=>{
-      const bx=W-360+i*118;
-      FR(bx,H-88,1,88,'rgba(255,255,255,0.15)');
-      ctx.beginPath();ctx.arc(bx+55,H-60,22,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fill();
-      TX(b[0],bx+55,H-52,18,'#fff','center',false);
-      TX(b[1],bx+55,H-28,12,'rgba(255,255,255,0.8)','center',false);
-    });
-
-    // === BOTTOM BAR ===
-    FR(0,H-16,W,16,t.accent2||t.accent);
-    TX('🌐 '+website,W/2-110,H-3,12,t.gold,'left',false);
-    TX('|',W/2+80,H-3,12,'rgba(255,255,255,0.4)','left',false);
-    TX('✉ '+email,W/2+92,H-3,12,t.gold,'left',false);
+  // ── JUDUL BESAR ────────────────────────────────────────────
+  const jy=198;
+  if(diskon){
+    TX('PROMO',22,jy,78,t.tx);
+    TX('DISKON '+diskon+'%',22,jy+88,88,t.ac);
+    TX('SPESIAL!',22,jy+176,46,t.ac2);
+  } else {
+    TX('JASA',22,jy,118,t.tx);
+    TX('TERJEMAH',22,jy+120,118,t.ac);
   }
 
-  // ===== LAYOUT 2: DARK ELEGANT =====
-  else {
-    FR(0,0,W,H,t.footerBg||'#0A0A14');
-    ctx.save();ctx.globalAlpha=0.08;ctx.fillStyle=t.accent;
-    ctx.beginPath();ctx.arc(W,0,500,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(0,H,400,0,Math.PI*2);ctx.fill();
-    ctx.restore();
-    // Photo kanan
-    drawPhoto(W*0.42,0,W*0.58,H-88);
-    const g2=ctx.createLinearGradient(0,0,W,0);
-    g2.addColorStop(0,t.footerBg||'#0A0A14');g2.addColorStop(0.4,t.footerBg||'#0A0A14');
-    g2.addColorStop(0.62,(t.footerBg||'#0A0A14')+'cc');g2.addColorStop(0.8,'transparent');
-    ctx.fillStyle=g2;ctx.fillRect(0,0,W,H-88);
-    // Header
-    drawLogoBox(22,18,85);
-    FR(120,22,2,80,'rgba(255,255,255,0.2)');
-    TX('SOLUSI TERJEMAHAN',136,46,16,'rgba(255,255,255,0.7)','left',true);
-    TX('TERPERCAYA',136,66,16,t.accent,'left',true);
-    TX('UNTUK SEMUA KEBUTUHAN ANDA',136,88,12,'rgba(255,255,255,0.5)','left',false);
-    drawTransIcon(W*0.68,90,46);
-    // Judul
-    TX(diskon?'DISKON':'JASA',22,200,108,'#fff');
-    TX(diskon?`${diskon}%`:'TERJEMAH',22,312,108,t.accent);
-    FR(22,330,W*0.4,3,t.accent);
-    TX('Terjemahan akurat, cepat, dan profesional',22,368,19,'rgba(255,255,255,0.7)','left',false);
-    TX('untuk berbagai dokumen dan bahasa.',22,392,19,'rgba(255,255,255,0.7)','left',false);
-    services.forEach((s,i)=>{
-      RR(22,430+i*65,W*0.4,55,8,'rgba(255,255,255,0.07)');
-      FR(22,430+i*65,4,55,t.accent);
-      TX(s[0]+' '+s[1],34,430+i*65+24,16,'rgba(255,255,255,0.9)');
-      TX(s[2],34,430+i*65+42,13,'rgba(255,255,255,0.5)','left',false);
-    });
-    drawBadge(W*0.56,680,50,'100%','TERJAMIN');
-    // Lang box
-    RR(W*0.62,560,W*0.36,170,10,t.accent+'cc');
-    TX('BAHASA LAYANAN',W*0.62+W*0.18,576,14,'#fff','center');
-    FR(W*0.62+8,584,W*0.36-16,2,'rgba(255,255,255,0.25)');
-    langs.forEach((l,i)=>{TX((l[0]?'●':' ')+' '+l[1],W*0.62+10+(i%2)*(W*0.18),600+Math.floor(i/2)*30,13,'rgba(255,255,255,0.88)','left',false);});
-    // Footer
-    FR(0,H-88,W,88,t.accent);
-    FR(0,H-88,W,3,t.gold);
-    ctx.beginPath();ctx.arc(48,H-44,28,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();
-    TX('📞',48,H-36,22,'#fff','center',false);
-    TX('HUBUNGI KAMI',84,H-63,14,'rgba(255,255,255,0.7)','left',false);
-    TX(phone,84,H-24,46,'#fff','left',true);
-    ['PROFESIONAL','BERKUALITAS','TERJAMIN'].forEach((b,i)=>{
-      RR(W-360+i*118,H-72,108,46,6,'rgba(255,255,255,0.12)');
-      TX(b,W-306+i*118,H-38,12,'rgba(255,255,255,0.85)','center',false);
-    });
-    FR(0,H-16,W,16,t.accent2||t.accent);
-    TX('🌐 '+website,W/2-100,H-3,12,'rgba(255,255,255,0.7)','left',false);
-    TX('|',W/2+90,H-3,12,'rgba(255,255,255,0.3)','left',false);
-    TX('✉ '+email,W/2+102,H-3,12,'rgba(255,255,255,0.7)','left',false);
-  }
+  // Garis aksen bawah judul
+  const lineY=diskon?jy+215:jy+235;
+  LN(22,lineY,W*.42,t.ac,4);
+  TX('SOLUSI TERJEMAHAN TERPERCAYA',22,lineY+24,20,t.tx);
+  TX('UNTUK SEMUA KEBUTUHAN ANDA',22,lineY+48,20,t.tx);
+  TX('Terjemahan akurat, cepat, dan profesional',22,lineY+76,17,t.sm,'left',false);
+  TX('untuk berbagai dokumen dan bahasa.',22,lineY+96,17,t.sm,'left',false);
+
+  // ── 4 LAYANAN ──────────────────────────────────────────────
+  const svy=lineY+122;
+  svcs.forEach((s,i)=>{
+    const sx=22+(i%2)*W*.23, sy=svy+Math.floor(i/2)*72;
+    drawSvcIcon(sx+18,sy+18,18,s[0]);
+    TX(s[1],sx+44,sy+16,16,t.tx);
+    TX(s[2],sx+44,sy+34,13,t.sm,'left',false);
+  });
+
+  // ── BADGE 100% ────────────────────────────────────────────
+  const badgeX=Math.round(W*.56), badgeY=svy+90;
+  drawBadge(badgeX,badgeY,52);
+
+  // ── BAHASA LAYANAN BOX ─────────────────────────────────────
+  const lbX=Math.round(W*.615), lbY=svy+22, lbW=Math.round(W*.37), lbH=170;
+  RR(lbX,lbY,lbW,lbH,10,t.ac);
+  TX('BAHASA LAYANAN',lbX+lbW/2,lbY+24,15,'#fff','center');
+  LN(lbX+10,lbY+32,lbW-20,'rgba(255,255,255,0.3)',1.5);
+  const langData=[
+    ['🇬🇧','Inggris','🇸🇦','Arab'],
+    ['🇨🇳','Mandarin','🇩🇪','Jerman'],
+    ['🇯🇵','Jepang','🇫🇷','Prancis'],
+    ['🇰🇷','Korea','🌏','dan lainnya'],
+  ];
+  langData.forEach((row,i)=>{
+    TX(row[0]+' '+row[1],lbX+10,lbY+52+i*28,14,'rgba(255,255,255,0.92)','left',false);
+    TX(row[2]+' '+row[3],lbX+lbW/2+5,lbY+52+i*28,14,'rgba(255,255,255,0.92)','left',false);
+  });
+
+  // ── FOOTER ─────────────────────────────────────────────────
+  FR(0,H-90,W,90,t.ft);
+  LN(0,H-90,W,t.gd,3);
+  // Lingkaran telpon
+  ctx.beginPath();ctx.arc(46,H-45,28,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();
+  TX('📞',46,H-37,22,'#fff','center',false);
+  LN(84,H-84,2,t.gd,66);
+  TX('HUBUNGI KAMI',94,H-63,14,'rgba(255,255,255,0.75)','left',false);
+  TX(phone,94,H-24,50,'#fff','left',true);
+  // 3 badge kanan
+  const bdgs=[['⚙️','PROFESIONAL'],['👍','BERKUALITAS'],['🔒','TERJAMIN']];
+  bdgs.forEach((b,i)=>{
+    const bx=W-350+i*116;
+    LN(bx-1,H-84,1,'rgba(255,255,255,0.2)',66);
+    ctx.beginPath();ctx.arc(bx+54,H-60,20,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fill();
+    TX(b[0],bx+54,H-52,17,'#fff','center',false);
+    TX(b[1],bx+54,H-30,12,'rgba(255,255,255,0.85)','center',false);
+  });
+  // Bottom bar tipis
+  FR(0,H-14,W,14,t.ac2||t.ac);
+  TX('🌐 '+website,W/2-108,H-2,12,t.gd,'left',false);
+  TX('|',W/2+82,H-2,12,'rgba(255,255,255,0.3)','left',false);
+  TX('✉ '+email,W/2+92,H-2,12,t.gd,'left',false);
 }
 
 
@@ -1631,7 +1579,121 @@ async function testCloudinary() {
   }
 }
 
-// ===================== FEED ASSETS (foto & logo) =====================
+// ===================== AI PHOTO GENERATOR (Stable Diffusion via HF) =====================
+async function generateAIPhoto() {
+  const btn = document.getElementById('ai-photo-btn');
+  const statusBox = document.getElementById('ai-gen-status');
+  const statusTxt = document.getElementById('ai-gen-text');
+  const hfKey = localStorage.getItem('ap_s-hf-key') || '';
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  statusBox.style.display = 'block';
+  statusTxt.innerHTML = '🤖 Mengirim request ke Stable Diffusion... (30-60 detik)';
+
+  const prompts = [
+    'professional Indonesian woman, wearing elegant green blazer, holding documents folder, smiling confidently, standing, white clean office background, high quality photography, portrait, 8k',
+    'beautiful professional Asian woman translator, green business suit, holding papers, bright smile, modern office background, professional headshot, high quality, detailed',
+    'Indonesian professional woman, formal green blazer, holding clipboard documents, friendly smile, clean white background, business portrait photography, sharp focus',
+  ];
+  const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+  const negPrompt = 'nsfw, nude, deformed, bad anatomy, blurry, low quality, cartoon, anime, drawing, text, watermark, ugly, multiple people';
+
+  // Coba beberapa model HF gratis
+  const models = [
+    'stabilityai/stable-diffusion-xl-base-1.0',
+    'runwayml/stable-diffusion-v1-5',
+    'stabilityai/stable-diffusion-2-1',
+  ];
+
+  let success = false;
+  for (const model of models) {
+    try {
+      statusTxt.innerHTML = `🤖 Mencoba model: ${model.split('/')[1]}... (harap tunggu)`;
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (hfKey) headers['Authorization'] = `Bearer ${hfKey}`;
+
+      const res = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            negative_prompt: negPrompt,
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 768,
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        // Model loading? Tunggu sebentar
+        if (err.error && err.error.includes('loading')) {
+          statusTxt.innerHTML = `⏳ Model sedang loading, tunggu 20 detik...`;
+          await new Promise(r => setTimeout(r, 20000));
+          // Retry
+          const res2 = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+            method: 'POST', headers,
+            body: JSON.stringify({ inputs: prompt, parameters: { negative_prompt: negPrompt, num_inference_steps: 20, width: 512, height: 768 } })
+          });
+          if (!res2.ok) continue;
+          const blob2 = await res2.blob();
+          if (blob2.type.startsWith('image/')) {
+            await saveAIPhoto(blob2);
+            success = true; break;
+          }
+        }
+        continue;
+      }
+
+      const blob = await res.blob();
+      if (blob.type.startsWith('image/')) {
+        await saveAIPhoto(blob);
+        success = true;
+        break;
+      }
+    } catch(e) {
+      console.log('Model failed:', model, e.message);
+      continue;
+    }
+  }
+
+  if (success) {
+    statusTxt.innerHTML = '✅ Foto AI berhasil di-generate dan disimpan!';
+    statusBox.style.background = '#eaf3de';
+    statusBox.style.borderColor = '#b2d89a';
+    statusBox.style.color = '#3b6d11';
+    setTimeout(() => { statusBox.style.display = 'none'; }, 4000);
+  } else {
+    statusTxt.innerHTML = '❌ Gagal generate. Coba lagi atau upload foto manual. <br><small>Tip: Daftar di <a href="https://huggingface.co" target="_blank">huggingface.co</a> → isi HF Token di Pengaturan untuk hasil lebih stabil.</small>';
+    statusBox.style.background = '#fcebeb';
+    statusBox.style.borderColor = '#f5b8b8';
+    statusBox.style.color = '#a32d2d';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🤖 Generate Foto AI (Gratis)';
+}
+
+async function saveAIPhoto(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      try { localStorage.setItem('ap_feed_photo', dataUrl); } catch(e) {}
+      feedAssets.photo = dataUrl;
+      updateAssetPreview('photo', dataUrl);
+      resolve();
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+
 const feedAssets = { photo: null, logo: null };
 
 async function loadFeedAsset(type, input) {
@@ -1874,6 +1936,18 @@ function updateMusicUploadUI() { checkMusicSimple(); }
 async function checkMusicStatus() {}
 
 
+function saveHF() {
+  const v = document.getElementById('s-hf-key').value.trim();
+  if(!v) return;
+  localStorage.setItem('ap_s-hf-key', v);
+  document.getElementById('hf-st').innerHTML = '<span style="color:#3b6d11">✅ Tersimpan!</span>';
+  setTimeout(() => document.getElementById('hf-st').innerHTML = '', 2000);
+}
+function toggleHF() {
+  const i = document.getElementById('s-hf-key');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
 function saveAnthropic() {
   const v = document.getElementById('s-anthropic').value.trim();
   if(!v) { document.getElementById('anthropic-st').innerHTML='<span style="color:#E24B4A">⚠️ Isi API key dulu</span>'; return; }
@@ -1998,7 +2072,7 @@ function renderHistory(){
 function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
 
 function saveSettings(){
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic','s-hf-key'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
