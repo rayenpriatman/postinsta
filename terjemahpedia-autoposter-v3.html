@@ -140,10 +140,7 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
           </div>
           <div id="photo-status" style="font-size:11px;color:#888;margin-top:5px;"></div>
         </div>
-        <button class="btn" onclick="generateAIPhoto()" id="ai-photo-btn" style="width:100%;margin-top:6px;justify-content:center;font-size:12px;padding:8px;">
-          🤖 Generate Foto AI (Gratis)
-        </button>
-      </div>
+        </div>
       <!-- Logo -->
       <div>
         <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-logo-input').click()" id="logo-drop">
@@ -159,13 +156,7 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
         <div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center;">PNG transparan lebih bagus</div>
       </div>
     </div>
-
-    <!-- AI Generate Status -->
-    <div id="ai-gen-status" style="display:none;background:#f0f7ff;border:1px solid #c8e0ff;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#1a4a8a;">
-      <span id="ai-gen-text">🤖 Generating foto AI...</span>
-    </div>
-
-    <p style="font-size:11px;color:#aaa;margin-bottom:14px;">📸 Foto & logo tersimpan di browser — tidak perlu upload ulang setiap kali</p>
+        <p style="font-size:11px;color:#aaa;margin-bottom:14px;">📸 Foto & logo tersimpan di browser — tidak perlu upload ulang setiap kali</p>
     <button class="btn btn-ig btn-full" onclick="runFeed()" id="feed-btn">🚀 Generate & Post ke Feed</button>
   </div>
 
@@ -354,21 +345,6 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       <span id="conn-st" style="font-size:12px;"></span>
     </div>
   </div>
-
-  <div class="card">
-    <div class="card-title">🤖 Hugging Face Token (AI Generate Foto)</div>
-    <div class="field">
-      <label>HF Token (opsional)</label>
-      <div style="display:flex;gap:6px;">
-        <input type="password" id="s-hf-key" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx" style="flex:1;">
-        <button class="btn" style="padding:9px;" onclick="toggleHF()">👁️</button>
-      </div>
-      <p class="hint">Opsional tapi lebih stabil. Daftar gratis di <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a> → New token → Read</p>
-    </div>
-    <button class="btn btn-dark" onclick="saveHF()">💾 Simpan Token</button>
-    <span id="hf-st" style="font-size:12px;margin-left:8px;"></span>
-  </div>
-
   <div class="card">
     <div class="card-title">🤖 Anthropic API Key (Caption AI)</div>
     <div class="field">
@@ -463,7 +439,7 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic','s-hf-key'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
@@ -1157,33 +1133,39 @@ async function genImage(cmd) {
 async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, photoImg, logoImg, rand, website='www.terjemahpedia.com', email='info@terjemahpedia.com', brand='TERJEMAHPEDIA'}) {
   const W=1080, H=1080;
 
-  // Pilih tema warna (6 variasi)
-  const themes=[
-    {bg:'#FFFFFF',ac:'#1B6B3A',ac2:'#145C30',gd:'#E8B800',ft:'#1B6B3A',tx:'#111',sm:'#444',lt:'#EAF5EE'},
-    {bg:'#FFFFFF',ac:'#1A3E8C',ac2:'#0F2D6B',gd:'#2196F3',ft:'#1A3E8C',tx:'#111',sm:'#444',lt:'#E3EEFF'},
-    {bg:'#FFFFFF',ac:'#B71C1C',ac2:'#7F0000',gd:'#FF8F00',ft:'#B71C1C',tx:'#111',sm:'#444',lt:'#FDECEA'},
-    {bg:'#FFFFFF',ac:'#4A148C',ac2:'#38006B',gd:'#FFD600',ft:'#4A148C',tx:'#111',sm:'#444',lt:'#F3E5F5'},
-    {bg:'#FFFFFF',ac:'#004D40',ac2:'#00251A',gd:'#FFB300',ft:'#004D40',tx:'#111',sm:'#444',lt:'#E0F2F1'},
-    {bg:'#0A0E1A',ac:'#C9A84C',ac2:'#8B6914',gd:'#C9A84C',ft:'#0D1626',tx:'#FFF',sm:'rgba(255,255,255,0.65)',lt:'rgba(201,168,76,0.12)'},
+  // 10 layout dasar × 10 warna × variasi dekorasi = 100+ kombinasi
+  const layoutIdx = rand(0, 9);
+  const decIdx    = rand(0, 4);
+
+  // 10 TEMA WARNA
+  const themes = [
+    {bg:'#FFFFFF',ac:'#1B6B3A',ac2:'#0F4C28',gd:'#E8B800',ft:'#1B6B3A',tx:'#111',tx2:'#1B6B3A',sm:'#555',lt:'#EAF5EE',dk:false},
+    {bg:'#FFFFFF',ac:'#1A3E8C',ac2:'#0F2D6B',gd:'#2196F3',ft:'#1A3E8C',tx:'#111',tx2:'#1A3E8C',sm:'#555',lt:'#E3EEFF',dk:false},
+    {bg:'#FFFFFF',ac:'#B71C1C',ac2:'#7F0000',gd:'#FF8F00',ft:'#B71C1C',tx:'#111',tx2:'#B71C1C',sm:'#555',lt:'#FDECEA',dk:false},
+    {bg:'#FFFFFF',ac:'#4A148C',ac2:'#38006B',gd:'#FFD600',ft:'#4A148C',tx:'#111',tx2:'#4A148C',sm:'#555',lt:'#F3E5F5',dk:false},
+    {bg:'#FFFFFF',ac:'#E65100',ac2:'#BF360C',gd:'#FFD600',ft:'#E65100',tx:'#1A0800',tx2:'#E65100',sm:'#5D4037',lt:'#FBE9E7',dk:false},
+    {bg:'#0A0E1A',ac:'#C9A84C',ac2:'#8B6914',gd:'#C9A84C',ft:'#0D1626',tx:'#FFF',tx2:'#C9A84C',sm:'rgba(255,255,255,0.65)',lt:'rgba(201,168,76,0.1)',dk:true},
+    {bg:'#001F3F',ac:'#00B4D8',ac2:'#0077B6',gd:'#90E0EF',ft:'#03045E',tx:'#FFF',tx2:'#90E0EF',sm:'rgba(255,255,255,0.65)',lt:'rgba(0,180,216,0.1)',dk:true},
+    {bg:'#0D1F12',ac:'#69F0AE',ac2:'#00C853',gd:'#FFD600',ft:'#1B5E20',tx:'#FFF',tx2:'#69F0AE',sm:'rgba(255,255,255,0.65)',lt:'rgba(105,240,174,0.1)',dk:true},
+    {bg:'#1A0A2E',ac:'#E040FB',ac2:'#AA00FF',gd:'#FFD740',ft:'#12022A',tx:'#FFF',tx2:'#E040FB',sm:'rgba(255,255,255,0.65)',lt:'rgba(224,64,251,0.1)',dk:true},
+    {bg:'#F0F4FF',ac:'#283593',ac2:'#1A237E',gd:'#FF6F00',ft:'#1A237E',tx:'#0D1B5E',tx2:'#283593',sm:'#37474F',lt:'#E8EAF6',dk:false},
   ];
-  const t=themes[rand(0,5)];
-  const dk=t.bg==='#0A0E1A';
+  const t = themes[rand(0, themes.length-1)];
 
-  // Data konten
-  const svcs=isDoc
-    ?[['🎯','AKURAT & BERKUALITAS','Hasil tepat, jelas, sesuai konteks'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa kurangi kualitas'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen prioritas kami'],['📋','BERBAGAI JENIS DOKUMEN','Pribadi, legal, akademik, bisnis & lainnya']]
-    :[['🎯','AKURAT & BERKUALITAS','Hasil tepat, jelas, sesuai konteks'],['⏱','CEPAT & TEPAT WAKTU','Pengerjaan cepat tanpa kurangi kualitas'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen prioritas kami'],['📋','BERBAGAI JENIS DOKUMEN','Pribadi, legal, akademik, bisnis & lainnya']];
+  const svcs = isDoc
+    ?[['🎯','AKURAT & BERKUALITAS','Hasil tepat, jelas, sesuai konteks'],['⏱','CEPAT & TEPAT WAKTU','Cepat tanpa mengurangi kualitas'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen terjamin'],['📋','BERBAGAI JENIS DOKUMEN','Pribadi, legal, akademik, bisnis']]
+    :[['🎯','AKURAT & BERKUALITAS','Hasil tepat, jelas, sesuai konteks'],['⏱','CEPAT & TEPAT WAKTU','Cepat tanpa mengurangi kualitas'],['🛡','AMAN & TERPERCAYA','Kerahasiaan dokumen terjamin'],['📋','BERBAGAI JENIS DOKUMEN','Pribadi, legal, akademik, bisnis']];
 
-  // ── HELPERS ──────────────────────────────────────────────
+  // ── HELPERS ──
   const FR=(x,y,w,h,c)=>{if(w>0&&h>0){ctx.fillStyle=c;ctx.fillRect(x,y,w,h);}};
   const RR=(x,y,w,h,r,c)=>{ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();};
   const TX=(s,x,y,sz,c,al='left',b=true)=>{ctx.fillStyle=c;ctx.font=`${b?'bold':'normal'} ${sz}px Arial`;ctx.textAlign=al;ctx.fillText(String(s),x,y);};
-  const LN=(x,y,w,c,h=2)=>{FR(x,y,w,h,c);};
+  const LN=(x,y,w,c,h=3)=>{FR(x,y,w,h,c);};
+  const SH=(on,c='rgba(0,0,0,0.25)',bl=6)=>{ctx.shadowColor=on?c:'transparent';ctx.shadowBlur=on?bl:0;};
+  const CI=(cx,cy,r,fill,stroke=null,sw=2)=>{ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=sw;ctx.stroke();}};
 
-  // Gambar foto (crop cover)
-  const drawPic=(x,y,w,h,clip)=>{
-    ctx.save();
-    ctx.beginPath();clip();ctx.clip();
+  const drawPic=(x,y,w,h,clipFn)=>{
+    ctx.save();ctx.beginPath();clipFn();ctx.clip();
     const r=photoImg.width/photoImg.height,ar=w/h;
     let sw,sh,sx,sy;
     if(r>ar){sh=photoImg.height;sw=sh*ar;sx=(photoImg.width-sw)/2;sy=0;}
@@ -1192,151 +1174,295 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     ctx.restore();
   };
 
-  // Logo box
   const drawLogo=(x,y,sz)=>{
     RR(x,y,sz,sz,sz*0.14,t.ac);
-    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz*0.36,0,Math.PI*2);ctx.stroke();
+    CI(x+sz/2,y+sz/2,sz*0.36,null,'rgba(255,255,255,0.35)',2.5);
     if(logoImg){
       ctx.save();ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz*0.34,0,Math.PI*2);ctx.clip();
       const lr=logoImg.width/logoImg.height,iw=sz*0.65,ih=iw/lr;
       ctx.drawImage(logoImg,x+sz/2-iw/2,y+sz/2-ih/2,iw,ih);
       ctx.restore();
-    } else {
-      TX(brand[0],x+sz/2,y+sz*0.65,sz*0.42,'#fff','center');
-    }
+    } else { TX(brand[0],x+sz/2,y+sz*0.65,sz*0.42,'#fff','center'); }
   };
 
-  // Ikon A→文
   const drawAZ=(cx,cy,sz)=>{
-    RR(cx-sz*.52,cy-sz*.52,sz*.78,sz*.78,sz*.12,t.ac);
-    TX('A',cx-sz*.13,cy+sz*.08,sz*.52,'#fff','center');
-    RR(cx-sz*.06,cy-sz*.06,sz*.78,sz*.78,sz*.12,t.ac2||'#0F4C1A');
-    TX('文',cx+sz*.33,cy+sz*.44,sz*.44,'#fff','center');
-    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.moveTo(cx+sz*.08,cy-sz*.16);ctx.lineTo(cx+sz*.26,cy-sz*.34);ctx.stroke();
+    RR(cx-sz*.52,cy-sz*.52,sz*.78,sz*.78,sz*.12,t.ac);TX('A',cx-sz*.13,cy+sz*.08,sz*.52,'#fff','center');
+    RR(cx-sz*.06,cy-sz*.06,sz*.78,sz*.78,sz*.12,t.ac2);TX('文',cx+sz*.33,cy+sz*.44,sz*.44,'#fff','center');
+    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx+sz*.08,cy-sz*.16);ctx.lineTo(cx+sz*.26,cy-sz*.34);ctx.stroke();
   };
 
-  // Ikon layanan (lingkaran outline)
-  const drawSvcIcon=(cx,cy,r,ico)=>{
-    ctx.strokeStyle=t.ac;ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
-    RR(cx-r,cy-r,r*2,r*2,r,'rgba(0,0,0,0)');
-    TX(ico,cx,cy+8,r*.9,t.ac,'center',false);
+  // POIN LAYANAN DIPERBESAR
+  const drawSvc=(x,y,ico,title,desc,onDark=false)=>{
+    const tc=onDark?'#fff':t.tx, sc=onDark?'rgba(255,255,255,0.7)':t.sm;
+    CI(x+24,y+24,24,t.lt,t.ac,2);
+    TX(ico,x+24,y+32,20,t.ac,'center',false);
+    TX(title,x+58,y+20,19,tc);
+    TX(desc,x+58,y+42,15,sc,'left',false);
   };
 
-  // Badge emas 100%
   const drawBadge=(cx,cy,r)=>{
-    // Outer gold
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=t.gd;ctx.fill();
-    ctx.beginPath();ctx.arc(cx,cy,r-5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-    ctx.beginPath();ctx.arc(cx,cy,r-11,0,Math.PI*2);ctx.fillStyle=t.ac;ctx.fill();
-    TX('100%',cx,cy-6,r*.42,'#fff','center');
-    TX('TERJAMIN',cx,cy+10,r*.24,'#fff','center');
-    TX('★★★',cx,cy+24,r*.22,t.gd,'center',false);
-    TX('PROFESIONAL',cx,cy+38,r*.18,'rgba(255,255,255,0.8)','center',false);
+    CI(cx,cy,r,t.gd);CI(cx,cy,r-5,'#fff');CI(cx,cy,r-11,t.ac);
+    TX('100%',cx,cy-4,r*.46,'#fff','center');TX('TERJAMIN',cx,cy+13,r*.25,'#fff','center');
+    TX('★★★',cx,cy+27,r*.23,t.gd,'center',false);
   };
 
-  // ── BACKGROUND ────────────────────────────────────────────
-  FR(0,0,W,H,t.bg);
-  // Grid halus
-  ctx.save();ctx.globalAlpha=.03;ctx.strokeStyle=t.ac;ctx.lineWidth=1;
-  for(let i=0;i<W;i+=54){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
-  for(let i=0;i<H;i+=54){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
-  ctx.restore();
-  // Lingkaran dekor kanan atas
-  ctx.save();ctx.globalAlpha=.06;ctx.fillStyle=t.ac;
-  ctx.beginPath();ctx.arc(W,0,380,0,Math.PI*2);ctx.fill();
-  ctx.restore();
+  const drawLangBox=(x,y,w,h)=>{
+    RR(x,y,w,h,10,t.ac);
+    TX('BAHASA LAYANAN',x+w/2,y+26,16,'#fff','center');
+    LN(x+10,y+36,w-20,'rgba(255,255,255,0.3)',1.5);
+    [['🇬🇧','Inggris','🇸🇦','Arab'],['🇨🇳','Mandarin','🇩🇪','Jerman'],['🇯🇵','Jepang','🇫🇷','Prancis'],['🇰🇷','Korea','🌏','dan lainnya']].forEach((r2,i)=>{
+      TX(r2[0]+' '+r2[1],x+12,y+56+i*32,15,'rgba(255,255,255,0.92)','left',false);
+      TX(r2[2]+' '+r2[3],x+w/2+6,y+56+i*32,15,'rgba(255,255,255,0.92)','left',false);
+    });
+  };
 
-  // ── FOTO (kanan, full height minus footer) ─────────────────
-  const photoX=Math.round(W*.44);
-  drawPic(photoX,0,W-photoX,H-90,()=>{ctx.rect(photoX,0,W-photoX,H-90);});
-  // Gradient overlay kiri→kanan di area foto
-  const og=ctx.createLinearGradient(photoX,0,W,0);
-  og.addColorStop(0,t.bg);og.addColorStop(.18,t.bg+'f5');
-  og.addColorStop(.42,t.bg+'88');og.addColorStop(.72,'transparent');
-  ctx.fillStyle=og;ctx.fillRect(photoX,0,W-photoX,H-90);
+  const drawFooter=(fy=H-90)=>{
+    FR(0,fy,W,H-fy,t.ft);LN(0,fy,W,t.gd,3);
+    CI(46,fy+45,28,'rgba(255,255,255,0.15)');
+    TX('📞',46,fy+53,22,'#fff','center',false);
+    LN(84,fy+6,2,t.gd,76);
+    TX('HUBUNGI KAMI',94,fy+28,15,'rgba(255,255,255,0.75)','left',false);
+    SH(true,'rgba(0,0,0,0.3)',5);TX(phone,94,fy+70,50,'#fff','left',true);SH(false);
+    [['⚙️','PROFESIONAL'],['👍','BERKUALITAS'],['🔒','TERJAMIN']].forEach((b,i)=>{
+      const bx=W-355+i*118;LN(bx,fy+6,1,'rgba(255,255,255,0.2)',76);
+      CI(bx+55,fy+30,20,'rgba(255,255,255,0.12)');
+      TX(b[0],bx+55,fy+38,17,'#fff','center',false);TX(b[1],bx+55,fy+62,13,'rgba(255,255,255,0.85)','center',false);
+    });
+    FR(0,H-14,W,14,t.ac2);
+    TX('🌐 '+website,W/2-108,H-2,12,t.gd,'left',false);
+    TX('|',W/2+82,H-2,12,'rgba(255,255,255,0.3)','left',false);
+    TX('✉ '+email,W/2+92,H-2,12,t.gd,'left',false);
+  };
 
-  // ── HEADER ROW ─────────────────────────────────────────────
-  drawLogo(22,18,88);
-  LN(124,20,2,t.ac+'44',80);
-  TX(brand,140,50,18,t.ac);
-  TX('Jasa Terjemah Pro',140,72,13,t.sm,'left',false);
-  TX('SOLUSI TERJEMAHAN TERPERCAYA',140,96,13,t.sm);
-  // Trans icon kanan
-  drawAZ(W*.74,88,44);
+  // 5 VARIASI DEKORASI BACKGROUND
+  const applyDec=()=>{
+    ctx.save();
+    const decs=[
+      ()=>{ctx.globalAlpha=.05;ctx.fillStyle=t.ac;CI(W,0,380,t.ac);CI(0,H,300,t.ac);},
+      ()=>{ctx.globalAlpha=.025;ctx.strokeStyle=t.ac;ctx.lineWidth=1;for(let i=0;i<W;i+=54){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}for(let i=0;i<H;i+=54){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}},
+      ()=>{ctx.globalAlpha=.05;ctx.fillStyle=t.ac;for(let x=36;x<W;x+=64)for(let y=36;y<H;y+=64){ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}},
+      ()=>{ctx.globalAlpha=.04;ctx.fillStyle=t.ac;for(let i=-H;i<W;i+=55){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.lineTo(i+H+22,H);ctx.lineTo(i+22,0);ctx.fill();}},
+      ()=>{ctx.globalAlpha=.04;ctx.strokeStyle=t.ac;ctx.lineWidth=40;CI(W*.82,H*.18,310,null,t.ac,40);CI(W*.15,H*.82,200,null,t.ac,30);},
+    ];
+    decs[decIdx]();ctx.restore();
+  };
 
-  // ── JUDUL BESAR ────────────────────────────────────────────
-  const jy=198;
-  if(diskon){
-    TX('PROMO',22,jy,78,t.tx);
-    TX('DISKON '+diskon+'%',22,jy+88,88,t.ac);
-    TX('SPESIAL!',22,jy+176,46,t.ac2);
-  } else {
-    TX('JASA',22,jy,118,t.tx);
-    TX('TERJEMAH',22,jy+120,118,t.ac);
+  const drawHeader=(x,y,sz,onDark=false)=>{
+    const tc=onDark?'#fff':t.ac, sc=onDark?'rgba(255,255,255,0.5)':t.sm;
+    drawLogo(x,y,sz);LN(x+sz+12,y+2,2,onDark?'rgba(255,255,255,0.28)':t.ac+'44',sz-4);
+    TX(brand,x+sz+22,y+sz*.54,18,tc);TX('Jasa Terjemah Pro',x+sz+22,y+sz*.78,13,sc,'left',false);
+    TX('SOLUSI TERJEMAHAN TERPERCAYA',x+sz+22,y+sz*.97,12,sc);
+  };
+
+  const drawTitle=(x,y,sz=118)=>{
+    SH(true,'rgba(0,0,0,0.12)',5);
+    TX(diskon?'PROMO':'JASA',x,y,sz,t.tx);
+    TX(diskon?`DISKON ${diskon}%`:'TERJEMAH',x,y+sz,sz,t.tx2);
+    SH(false);
+  };
+
+  const drawSubContent=(x,y,w,onDark=false)=>{
+    const tc=onDark?'#fff':t.tx, sc=onDark?'rgba(255,255,255,0.65)':t.sm;
+    LN(x,y,w,onDark?'rgba(255,255,255,0.4)':t.ac,4);
+    TX('SOLUSI TERJEMAHAN TERPERCAYA',x,y+28,21,tc);
+    TX('UNTUK SEMUA KEBUTUHAN ANDA',x,y+52,21,tc);
+    TX('Terjemahan akurat, cepat, dan profesional',x,y+80,17,sc,'left',false);
+    TX('untuk berbagai dokumen dan bahasa.',x,y+100,17,sc,'left',false);
+  };
+
+  // Background
+  FR(0,0,W,H,t.bg);applyDec();
+
+  // ══════════════════════════════════════════
+  // 10 LAYOUT
+  // ══════════════════════════════════════════
+
+  // LAYOUT 0: FOTO KANAN CLASSIC
+  if(layoutIdx===0){
+    const px=Math.round(W*.44);
+    drawPic(px,0,W-px,H-90,()=>ctx.rect(px,0,W-px,H-90));
+    ctx.fillStyle=ctx.createLinearGradient(px,0,W,0);
+    const g=ctx.createLinearGradient(px,0,W,0);g.addColorStop(0,t.bg);g.addColorStop(.2,t.bg);g.addColorStop(.55,t.bg+'cc');g.addColorStop(.82,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(px,0,W-px,H-90);
+    drawHeader(22,18,88);drawAZ(W*.74,88,44);
+    drawTitle(22,195);
+    const cy=195+236;
+    drawSubContent(22,cy,W*.44);
+    const sy=cy+118;
+    svcs.forEach((s,i)=>drawSvc(22+(i%2)*W*.24,sy+Math.floor(i/2)*80,s[0],s[1],s[2]));
+    drawBadge(Math.round(W*.565),sy+100,54);
+    drawLangBox(Math.round(W*.612),sy+18,Math.round(W*.375),185);
+    drawFooter();
   }
 
-  // Garis aksen bawah judul
-  const lineY=diskon?jy+215:jy+235;
-  LN(22,lineY,W*.42,t.ac,4);
-  TX('SOLUSI TERJEMAHAN TERPERCAYA',22,lineY+24,20,t.tx);
-  TX('UNTUK SEMUA KEBUTUHAN ANDA',22,lineY+48,20,t.tx);
-  TX('Terjemahan akurat, cepat, dan profesional',22,lineY+76,17,t.sm,'left',false);
-  TX('untuk berbagai dokumen dan bahasa.',22,lineY+96,17,t.sm,'left',false);
+  // LAYOUT 1: FOTO KIRI
+  else if(layoutIdx===1){
+    const pw=Math.round(W*.48);
+    drawPic(0,0,pw,H-90,()=>ctx.rect(0,0,pw,H-90));
+    const g=ctx.createLinearGradient(0,0,pw,0);g.addColorStop(0,'transparent');g.addColorStop(.5,t.bg+'cc');g.addColorStop(.82,t.bg);
+    ctx.fillStyle=g;ctx.fillRect(0,0,pw,H-90);LN(W-10,0,10,t.ac,H-90);
+    const rx=Math.round(W*.5);
+    drawHeader(rx,18,82);drawAZ(rx+W*.44,82,42);
+    drawTitle(rx,200,112);
+    const cy=200+224;
+    drawSubContent(rx,cy,W-rx-18);
+    const sy=cy+118;
+    svcs.forEach((s,i)=>drawSvc(rx+(i%2)*((W-rx-18)/2),sy+Math.floor(i/2)*80,s[0],s[1],s[2]));
+    drawBadge(rx+Math.round((W-rx)*.28),sy+188,52);
+    drawLangBox(rx+Math.round((W-rx)*.44),sy+112,Math.round((W-rx)*.54),182);
+    drawFooter();
+  }
 
-  // ── 4 LAYANAN ──────────────────────────────────────────────
-  const svy=lineY+122;
-  svcs.forEach((s,i)=>{
-    const sx=22+(i%2)*W*.23, sy=svy+Math.floor(i/2)*72;
-    drawSvcIcon(sx+18,sy+18,18,s[0]);
-    TX(s[1],sx+44,sy+16,16,t.tx);
-    TX(s[2],sx+44,sy+34,13,t.sm,'left',false);
-  });
+  // LAYOUT 2: FOTO FULL BG
+  else if(layoutIdx===2){
+    drawPic(0,0,W,H,()=>ctx.rect(0,0,W,H));
+    ctx.fillStyle='rgba(0,0,0,0.52)';ctx.fillRect(0,0,W,H);
+    drawHeader(22,18,82,true);drawAZ(W*.73,82,42);
+    SH(true,'rgba(0,0,0,0.5)',12);
+    TX(diskon?'PROMO':'JASA',22,215,118,'#fff');
+    TX(diskon?`DISKON ${diskon}%`:'TERJEMAH',22,333,118,t.gd);SH(false);
+    LN(22,357,W*.52,'rgba(255,255,255,0.4)',4);
+    TX('SOLUSI TERJEMAHAN TERPERCAYA',22,385,21,'rgba(255,255,255,0.92)');
+    TX('UNTUK SEMUA KEBUTUHAN ANDA',22,410,21,'rgba(255,255,255,0.92)');
+    TX('Terjemahan akurat, cepat & profesional.',22,438,17,'rgba(255,255,255,0.65)','left',false);
+    const sy=468;
+    svcs.forEach((s,i)=>{
+      const sx=22+(i%2)*W*.27,sy2=sy+Math.floor(i/2)*80;
+      RR(sx,sy2,W*.25,68,8,'rgba(255,255,255,0.12)');LN(sx,sy2,W*.25,t.gd,3);
+      TX(s[0]+' '+s[1],sx+10,sy2+28,18,'#fff');TX(s[2],sx+10,sy2+48,14,'rgba(255,255,255,0.65)','left',false);
+    });
+    drawBadge(Math.round(W*.58),sy+100,54);
+    drawLangBox(Math.round(W*.612),sy+18,Math.round(W*.375),185);
+    drawFooter();
+  }
 
-  // ── BADGE 100% ────────────────────────────────────────────
-  const badgeX=Math.round(W*.56), badgeY=svy+90;
-  drawBadge(badgeX,badgeY,52);
+  // LAYOUT 3: DIAGONAL CUT
+  else if(layoutIdx===3){
+    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W*.62,0);ctx.lineTo(W*.46,H-90);ctx.lineTo(0,H-90);ctx.closePath();ctx.fillStyle=t.ac;ctx.fill();ctx.restore();
+    ctx.save();ctx.globalAlpha=.08;ctx.fillStyle='#fff';CI(0,H,420,'#fff');ctx.restore();
+    ctx.save();ctx.beginPath();ctx.moveTo(W*.54,0);ctx.lineTo(W,0);ctx.lineTo(W,H-90);ctx.lineTo(W*.38,H-90);ctx.closePath();ctx.clip();
+    drawPic(W*.38,0,W*.62,H-90,()=>{ctx.rect(W*.38,0,W*.62,H-90);});
+    const g=ctx.createLinearGradient(W*.38,0,W*.7,0);g.addColorStop(0,t.ac+'cc');g.addColorStop(.5,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(W*.38,0,W*.62,H-90);ctx.restore();
+    drawLogo(24,18,80);TX(brand,116,46,16,'#fff');TX('Jasa Terjemah Pro',116,68,12,'rgba(255,255,255,0.6)','left',false);drawAZ(W*.38,80,38);
+    SH(true,'rgba(0,0,0,0.2)',6);TX(diskon?'PROMO':'JASA',24,205,118,'#fff');TX(diskon?`DISKON ${diskon}%`:'TERJEMAH',24,323,118,t.gd);SH(false);
+    LN(24,347,'rgba(255,255,255,0.35)',W*.4,3);
+    TX('SOLUSI TERJEMAHAN TERPERCAYA',24,375,20,'rgba(255,255,255,0.92)');TX('UNTUK SEMUA KEBUTUHAN ANDA',24,400,20,'rgba(255,255,255,0.92)');
+    TX('Terjemahan akurat, cepat & profesional.',24,428,16,'rgba(255,255,255,0.65)','left',false);
+    svcs.forEach((s,i)=>{const sy=456+i*72;RR(24,sy,W*.42,62,8,'rgba(255,255,255,0.12)');LN(24,sy,4,t.gd,62);TX(s[0]+' '+s[1],40,sy+26,18,'#fff');TX(s[2],40,sy+46,14,'rgba(255,255,255,0.6)','left',false);});
+    drawFooter();
+  }
 
-  // ── BAHASA LAYANAN BOX ─────────────────────────────────────
-  const lbX=Math.round(W*.615), lbY=svy+22, lbW=Math.round(W*.37), lbH=170;
-  RR(lbX,lbY,lbW,lbH,10,t.ac);
-  TX('BAHASA LAYANAN',lbX+lbW/2,lbY+24,15,'#fff','center');
-  LN(lbX+10,lbY+32,lbW-20,'rgba(255,255,255,0.3)',1.5);
-  const langData=[
-    ['🇬🇧','Inggris','🇸🇦','Arab'],
-    ['🇨🇳','Mandarin','🇩🇪','Jerman'],
-    ['🇯🇵','Jepang','🇫🇷','Prancis'],
-    ['🇰🇷','Korea','🌏','dan lainnya'],
-  ];
-  langData.forEach((row,i)=>{
-    TX(row[0]+' '+row[1],lbX+10,lbY+52+i*28,14,'rgba(255,255,255,0.92)','left',false);
-    TX(row[2]+' '+row[3],lbX+lbW/2+5,lbY+52+i*28,14,'rgba(255,255,255,0.92)','left',false);
-  });
+  // LAYOUT 4: FOTO ATAS
+  else if(layoutIdx===4){
+    const sp=Math.round(H*.52);
+    drawPic(0,0,W,sp,()=>ctx.rect(0,0,W,sp));
+    const g=ctx.createLinearGradient(0,0,0,sp);g.addColorStop(0,'rgba(0,0,0,0.04)');g.addColorStop(.55,'rgba(0,0,0,0.52)');g.addColorStop(1,'rgba(0,0,0,0.88)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,sp);
+    drawHeader(22,18,78,true);drawAZ(W*.82,78,38);
+    SH(true,'rgba(0,0,0,0.45)',10);TX(diskon?`PROMO DISKON ${diskon}%`:'JASA TERJEMAH',22,sp-112,90,'#fff');SH(false);
+    TX(diskon?'PENAWARAN SPESIAL!':'PROFESIONAL & TERPERCAYA',22,sp-42,30,t.gd);
+    FR(0,sp,W,H-sp,t.bg);LN(0,sp,W,t.ac,5);
+    svcs.forEach((s,i)=>{
+      const sx=22+(i%2)*W*.5,sy=sp+18+Math.floor(i/2)*92;
+      RR(sx,sy,W*.47,78,10,t.lt);LN(sx,sy,W*.47,t.ac,4);
+      CI(sx+26,sy+39,23,t.lt,t.ac,2);TX(s[0],sx+26,sy+47,20,t.ac,'center',false);
+      TX(s[1],sx+60,sy+26,18,t.tx);TX(s[2],sx+60,sy+46,14,t.sm,'left',false);
+    });
+    drawBadge(Math.round(W*.27),sp+220,48);drawLangBox(Math.round(W*.46),sp+156,Math.round(W*.52),178);drawFooter();
+  }
 
-  // ── FOOTER ─────────────────────────────────────────────────
-  FR(0,H-90,W,90,t.ft);
-  LN(0,H-90,W,t.gd,3);
-  // Lingkaran telpon
-  ctx.beginPath();ctx.arc(46,H-45,28,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();
-  TX('📞',46,H-37,22,'#fff','center',false);
-  LN(84,H-84,2,t.gd,66);
-  TX('HUBUNGI KAMI',94,H-63,14,'rgba(255,255,255,0.75)','left',false);
-  TX(phone,94,H-24,50,'#fff','left',true);
-  // 3 badge kanan
-  const bdgs=[['⚙️','PROFESIONAL'],['👍','BERKUALITAS'],['🔒','TERJAMIN']];
-  bdgs.forEach((b,i)=>{
-    const bx=W-350+i*116;
-    LN(bx-1,H-84,1,'rgba(255,255,255,0.2)',66);
-    ctx.beginPath();ctx.arc(bx+54,H-60,20,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fill();
-    TX(b[0],bx+54,H-52,17,'#fff','center',false);
-    TX(b[1],bx+54,H-30,12,'rgba(255,255,255,0.85)','center',false);
-  });
-  // Bottom bar tipis
-  FR(0,H-14,W,14,t.ac2||t.ac);
-  TX('🌐 '+website,W/2-108,H-2,12,t.gd,'left',false);
-  TX('|',W/2+82,H-2,12,'rgba(255,255,255,0.3)','left',false);
-  TX('✉ '+email,W/2+92,H-2,12,t.gd,'left',false);
+  // LAYOUT 5: FOTO LINGKARAN
+  else if(layoutIdx===5){
+    const cr=262,cx=W*.72,cy=H*.44;
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.clip();
+    drawPic(cx-cr,cy-cr,cr*2,cr*2,()=>{ctx.arc(cx,cy,cr,0,Math.PI*2);});ctx.restore();
+    CI(cx,cy,cr,null,t.ac,6);CI(cx,cy,cr+10,null,t.gd,2);
+    drawHeader(22,18,86);drawAZ(W*.36,86,40);
+    drawTitle(22,195,112);
+    const cy2=195+224;
+    drawSubContent(22,cy2,W*.44);
+    const sy=cy2+118;
+    svcs.forEach((s,i)=>drawSvc(22+(i%2)*W*.24,sy+Math.floor(i/2)*80,s[0],s[1],s[2]));
+    drawBadge(Math.round(W*.565),sy+100,52);drawLangBox(Math.round(W*.612),sy+18,Math.round(W*.375),183);drawFooter();
+  }
+
+  // LAYOUT 6: SPLIT PANEL
+  else if(layoutIdx===6){
+    FR(0,0,W*.45,H-90,t.ac);
+    ctx.save();ctx.globalAlpha=.08;ctx.fillStyle='#fff';CI(0,H,420,'#fff');ctx.restore();
+    drawPic(W*.45,0,W*.55,H-90,()=>ctx.rect(W*.45,0,W*.55,H-90));
+    const g=ctx.createLinearGradient(W*.45,0,W*.7,0);g.addColorStop(0,t.ac+'99');g.addColorStop(.5,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(W*.45,0,W*.55,H-90);
+    drawLogo(22,18,82);TX(brand,116,46,16,'#fff');TX('Jasa Terjemah Pro',116,68,12,'rgba(255,255,255,0.55)','left',false);drawAZ(W*.36,82,40);
+    SH(true,'rgba(0,0,0,0.2)',6);TX(diskon?'PROMO':'JASA',22,205,118,'#fff');TX(diskon?`DISKON ${diskon}%`:'TERJEMAH',22,323,118,'rgba(255,255,255,0.9)');SH(false);
+    LN(22,348,'rgba(255,255,255,0.35)',W*.4,3);TX('SOLUSI TERJEMAHAN TERPERCAYA',22,375,20,'rgba(255,255,255,0.92)');TX('UNTUK SEMUA KEBUTUHAN ANDA',22,400,20,'rgba(255,255,255,0.92)');
+    TX('Terjemahan akurat, cepat & profesional.',22,428,16,'rgba(255,255,255,0.65)','left',false);
+    svcs.forEach((s,i)=>{const sy=456+i*72;RR(22,sy,W*.4,62,8,'rgba(255,255,255,0.12)');LN(22,sy,4,t.gd,62);TX(s[0]+' '+s[1],36,sy+26,18,'#fff');TX(s[2],36,sy+46,14,'rgba(255,255,255,0.6)','left',false);});
+    drawFooter();
+  }
+
+  // LAYOUT 7: DOUBLE SECTION
+  else if(layoutIdx===7){
+    const sp=Math.round(H*.5-45);
+    FR(0,0,W,sp,t.ac);
+    ctx.save();ctx.globalAlpha=.08;ctx.fillStyle='#fff';CI(0,0,300,'#fff');ctx.restore();
+    drawPic(W*.42,0,W*.58,sp,()=>ctx.rect(W*.42,0,W*.58,sp));
+    const g=ctx.createLinearGradient(W*.42,0,W*.7,0);g.addColorStop(0,t.ac+'dd');g.addColorStop(.5,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(W*.42,0,W*.58,sp);
+    FR(0,sp,W,H-sp,t.bg);LN(0,sp,W,t.gd,5);
+    drawLogo(22,15,78);TX(brand,112,43,15,'#fff');TX('Jasa Terjemah Pro',112,63,11,'rgba(255,255,255,0.55)','left',false);drawAZ(W*.37,72,36);
+    SH(true,'rgba(0,0,0,0.2)',5);TX(diskon?'PROMO':'JASA',22,182,112,'#fff');TX(diskon?`DISKON ${diskon}%`:'TERJEMAH',22,294,112,'rgba(255,255,255,0.9)');SH(false);
+    TX('SOLUSI TERPERCAYA UNTUK SEMUA KEBUTUHAN ANDA',22,322,18,'rgba(255,255,255,0.88)');
+    TX('Terjemahan akurat, cepat & profesional.',22,346,15,'rgba(255,255,255,0.65)','left',false);
+    const bsy=sp+16;
+    svcs.forEach((s,i)=>{
+      const sx=22+(i%2)*W*.5,sy=bsy+Math.floor(i/2)*88;
+      RR(sx,sy,W*.47,76,10,t.lt);LN(sx,sy,W*.47,t.ac,4);
+      CI(sx+24,sy+38,22,t.lt,t.ac,2);TX(s[0],sx+24,sy+46,20,t.ac,'center',false);
+      TX(s[1],sx+56,sy+24,18,t.tx);TX(s[2],sx+56,sy+44,14,t.sm,'left',false);
+    });
+    drawBadge(Math.round(W*.27),bsy+202,46);drawLangBox(Math.round(W*.44),bsy+145,Math.round(W*.54),175);drawFooter();
+  }
+
+  // LAYOUT 8: FOTO KANAN + HEADER BAND
+  else if(layoutIdx===8){
+    FR(0,0,W,145,t.ac);
+    ctx.save();ctx.globalAlpha=.08;ctx.fillStyle='#fff';CI(W,72,200,'#fff');ctx.restore();
+    const px=Math.round(W*.44);
+    drawPic(px,145,W-px,H-145-90,()=>ctx.rect(px,145,W-px,H-145-90));
+    const g=ctx.createLinearGradient(px,0,W,0);g.addColorStop(0,t.bg);g.addColorStop(.2,t.bg);g.addColorStop(.55,t.bg+'cc');g.addColorStop(.82,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(px,145,W-px,H-145-90);
+    drawLogo(22,22,100);
+    TX(brand,140,60,22,'#fff');TX('Jasa Terjemah Profesional & Terpercaya',140,85,15,'rgba(255,255,255,0.75)','left',false);
+    TX('SOLUSI TERJEMAHAN TERPERCAYA',140,110,13,'rgba(255,255,255,0.6)');
+    drawAZ(W*.74,72,46);
+    const jy=200;
+    drawTitle(22,jy);
+    const cy=jy+238;
+    drawSubContent(22,cy,W*.44);
+    const sy=cy+120;
+    svcs.forEach((s,i)=>drawSvc(22+(i%2)*W*.24,sy+Math.floor(i/2)*80,s[0],s[1],s[2]));
+    drawBadge(Math.round(W*.565),sy+100,54);drawLangBox(Math.round(W*.612),sy+18,Math.round(W*.375),185);drawFooter();
+  }
+
+  // LAYOUT 9: FOTO KANAN + ACCENT SHAPES
+  else if(layoutIdx===9){
+    ctx.save();ctx.globalAlpha=.08;ctx.fillStyle=t.ac;ctx.beginPath();ctx.arc(W,H/2,420,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.globalAlpha=.04;ctx.fillStyle=t.ac;ctx.beginPath();ctx.arc(W*.3,H,380,0,Math.PI*2);ctx.fill();ctx.restore();
+    FR(0,0,10,H-90,t.ac);FR(0,0,W,10,t.ac);
+    const px=Math.round(W*.44);
+    drawPic(px,10,W-px,H-90-10,()=>ctx.rect(px,10,W-px,H-90-10));
+    const g=ctx.createLinearGradient(px,0,W,0);g.addColorStop(0,t.bg);g.addColorStop(.18,t.bg);g.addColorStop(.52,t.bg+'cc');g.addColorStop(.8,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(px,10,W-px,H-90-10);
+    drawHeader(22,24,86);drawAZ(W*.74,90,44);
+    drawTitle(22,200);
+    const cy=200+238;
+    drawSubContent(22,cy,W*.44);
+    const sy=cy+120;
+    svcs.forEach((s,i)=>drawSvc(22+(i%2)*W*.24,sy+Math.floor(i/2)*80,s[0],s[1],s[2]));
+    drawBadge(Math.round(W*.565),sy+100,54);drawLangBox(Math.round(W*.612),sy+18,Math.round(W*.375),185);drawFooter();
+  }
 }
 
 
@@ -1936,17 +2062,6 @@ function updateMusicUploadUI() { checkMusicSimple(); }
 async function checkMusicStatus() {}
 
 
-function saveHF() {
-  const v = document.getElementById('s-hf-key').value.trim();
-  if(!v) return;
-  localStorage.setItem('ap_s-hf-key', v);
-  document.getElementById('hf-st').innerHTML = '<span style="color:#3b6d11">✅ Tersimpan!</span>';
-  setTimeout(() => document.getElementById('hf-st').innerHTML = '', 2000);
-}
-function toggleHF() {
-  const i = document.getElementById('s-hf-key');
-  i.type = i.type === 'password' ? 'text' : 'password';
-}
 
 function saveAnthropic() {
   const v = document.getElementById('s-anthropic').value.trim();
@@ -2072,7 +2187,7 @@ function renderHistory(){
 function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
 
 function saveSettings(){
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic','s-hf-key'].forEach(id=>{
+  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
