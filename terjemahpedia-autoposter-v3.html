@@ -1241,16 +1241,23 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx+sz*.08,cy-sz*.16);ctx.lineTo(cx+sz*.26,cy-sz*.34);ctx.stroke();
   };
 
-  // POIN LAYANAN — ukuran normal, rapi, tidak overflow
-  const drawSvc=(x,y,ico,title,desc,maxTW=220)=>{
-    // Lingkaran icon
-    CI(x+20,y+20,20,t.lt,t.ac,1.5);
-    TX(ico,x+20,y+27,16,t.ac,'center',false);
-    // Teks — auto truncate agar tidak overflow
-    const t1=title.length*10.5>maxTW?title.slice(0,Math.floor(maxTW/10.5)-1)+'…':title;
-    const t2=desc.length*8.2>maxTW?desc.slice(0,Math.floor(maxTW/8.2)-1)+'…':desc;
-    TX(t1,x+46,y+16,15,t.tx);
-    TX(t2,x+46,y+32,12,t.sm,'left',false);
+  // POIN LAYANAN — teks lebih besar, tidak terpotong, wrap ke 2 baris
+  const drawSvc=(x,y,ico,title,desc)=>{
+    CI(x+22,y+24,22,t.lt,t.ac,2);
+    TX(ico,x+22,y+32,18,t.ac,'center',false);
+    // Judul — bold, lebih besar
+    TX(title,x+52,y+18,17,t.tx,'left',true);
+    // Deskripsi — wrap manual kalau panjang
+    const words=desc.split(' ');
+    let line1='',line2='';
+    for(const w of words){
+      const test=line1?line1+' '+w:w;
+      ctx.font='normal 13px Arial';
+      if(ctx.measureText(test).width>160&&line1){line2=(line2?line2+' ':'')+w;}
+      else line1=test;
+    }
+    TX(line1,x+52,y+36,13,t.sm,'left',false);
+    if(line2) TX(line2,x+52,y+50,13,t.sm,'left',false);
   };
 
   const drawBadge=(cx,cy,r)=>{
@@ -1258,11 +1265,25 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     TX('100%',cx,cy-4,r*.46,'#fff','center');TX('TERJAMIN',cx,cy+13,r*.25,'#fff','center');TX('★★★',cx,cy+27,r*.23,t.gd,'center',false);
   };
 
+  // BAHASA LAYANAN — kotak warna pengganti bendera (canvas tidak render emoji bendera)
   const drawLangBox=(x,y,w,h)=>{
-    RR(x,y,w,h,10,t.ac);TX('BAHASA LAYANAN',x+w/2,y+24,15,'#fff','center');LN(x+10,y+34,w-20,'rgba(255,255,255,0.3)',1.5);
-    [['🇬🇧','Inggris','🇸🇦','Arab'],['🇨🇳','Mandarin','🇩🇪','Jerman'],['🇯🇵','Jepang','🇫🇷','Prancis'],['🇰🇷','Korea','🌏','lainnya']].forEach((r2,i)=>{
-      TX(r2[0]+' '+r2[1],x+10,y+54+i*30,14,'rgba(255,255,255,0.92)','left',false);
-      TX(r2[2]+' '+r2[3],x+w/2+4,y+54+i*30,14,'rgba(255,255,255,0.92)','left',false);
+    RR(x,y,w,h,10,t.ac);
+    TX('BAHASA LAYANAN',x+w/2,y+26,16,'#fff','center');
+    LN(x+10,y+36,w-20,'rgba(255,255,255,0.3)',1.5);
+    const langs=[
+      ['#012169','Inggris','#006C35','Arab'],
+      ['#DE2910','Mandarin','#000000','Jerman'],
+      ['#BC002D','Jepang','#002395','Prancis'],
+      ['#003478','Korea','#1B6B3A','lainnya'],
+    ];
+    langs.forEach((row,i)=>{
+      const ly=y+54+i*34;
+      // Kolom kiri
+      RR(x+10,ly-12,20,16,3,row[0]);
+      TX(row[1],x+36,ly,16,'rgba(255,255,255,0.95)','left',false);
+      // Kolom kanan
+      RR(x+w/2+4,ly-12,20,16,3,row[2]);
+      TX(row[3],x+w/2+30,ly,16,'rgba(255,255,255,0.95)','left',false);
     });
   };
 
@@ -1319,17 +1340,30 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   const PX=Math.round(W*.44); // mulai foto
   const PW=W-PX;              // lebar foto
 
+  // Helper: gambar foto proporsional, rata bawah, tidak melebihi area
+  const drawPhotoFit=(px,py,pw,ph)=>{
+    const ir=photoImg.width/photoImg.height;
+    // Hitung ukuran agar foto fit dalam area (contain)
+    let dw=pw, dh=pw/ir;
+    if(dh>ph){dh=ph;dw=ph*ir;}
+    // Pastikan tidak melebihi lebar area
+    if(dw>pw){dw=pw;dh=pw/ir;}
+    // Posisi: tengah horizontal, rata bawah
+    const dx=px+(pw-dw)/2;
+    const dy=py+(ph-dh); // rata bawah
+    ctx.drawImage(photoImg,dx,dy,dw,dh);
+  };
+
   if(layoutIdx<=7){
-    // Variasi posisi foto kanan
     const offsets=[0,0,10,0,5,0,0,15];
     const pyOffset=offsets[layoutIdx]||0;
 
-    // Foto kanan — gambar dulu (background)
-    drawPhotoContain(PX,pyOffset,PW,FY-pyOffset);
+    // Gambar foto proporsional di zona kanan
+    drawPhotoFit(PX,pyOffset,PW,FY-pyOffset);
     // Blend kiri foto
-    const g=ctx.createLinearGradient(PX,0,PX+PW*.38,0);
-    g.addColorStop(0,t.bg+'ff');g.addColorStop(.5,t.bg+'bb');g.addColorStop(1,'transparent');
-    ctx.fillStyle=g;ctx.fillRect(PX,0,PW*.38,FY);
+    const g=ctx.createLinearGradient(PX,0,PX+PW*.35,0);
+    g.addColorStop(0,t.bg+'ff');g.addColorStop(.6,t.bg+'cc');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(PX,0,PW*.35,FY);
 
     // Semua konten di zona kiri (0 ~ TW)
     drawLogo(18,18,82);
@@ -1351,16 +1385,16 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     svcs.forEach((s,i)=>{
       const sx=18+(i%2)*(cw+12);
       const sy2=sy+Math.floor(i/2)*72;
-      drawSvc(sx,sy2,s[0],s[1],s[2],cw-50);
+      drawSvc(sx,sy2,s[0],s[1],s[2]);
     });
 
     // Badge & Lang box — di bawah poin, masih di zona kiri
-    const infoY=sy+174;
+    const infoY=sy+192;
     const badgeR=44;
     drawBadge(18+badgeR,infoY+badgeR,badgeR);
     const lbX=18+badgeR*2+12;
     const lbW=TW-lbX-8;
-    drawLangBox(lbX,infoY,lbW,176);
+    drawLangBox(lbX,infoY,lbW,196);
 
     drawFooter();
   }
@@ -1368,10 +1402,10 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   else if(layoutIdx===8){
     // Foto kiri — teks kanan
     const PXL=Math.round(W*.52);
-    drawPhotoContain(0,0,PXL,FY);
-    const g=ctx.createLinearGradient(PXL*.6,0,PXL,0);
+    drawPhotoFit(0,0,PXL,FY);
+    const g=ctx.createLinearGradient(PXL*.62,0,PXL,0);
     g.addColorStop(0,'transparent');g.addColorStop(1,t.bg+'ee');
-    ctx.fillStyle=g;ctx.fillRect(PXL*.6,0,PXL*.4,FY);
+    ctx.fillStyle=g;ctx.fillRect(PXL*.62,0,PXL*.38,FY);
 
     const rx=PXL+14;
     const rtw=W-rx-14;
@@ -1381,11 +1415,11 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     const cy=192+fs*2+16;
     drawSubContent(rx,cy,rtw-10);
     const sy=cy+114;
-    svcs.forEach((s,i)=>drawSvc(rx+(i%2)*(cw+10),sy+Math.floor(i/2)*72,s[0],s[1],s[2],cw-50));
-    const infoY=sy+170;const badgeR=42;
+    svcs.forEach((s,i)=>drawSvc(rx+(i%2)*(cw+10),sy+Math.floor(i/2)*86,s[0],s[1],s[2]));
+    const infoY=sy+188;const badgeR=42;
     drawBadge(rx+badgeR,infoY+badgeR,badgeR);
     const lbX=rx+badgeR*2+10;const lbW=rtw-badgeR*2-22;
-    drawLangBox(lbX,infoY,lbW,174);
+    drawLangBox(lbX,infoY,lbW,194);
     drawFooter();
   }
 
@@ -1403,7 +1437,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     LN(20,354,W*.52,'rgba(255,255,255,0.4)',4);TX('SOLUSI TERJEMAHAN TERPERCAYA',20,382,21,'rgba(255,255,255,0.92)');TX('UNTUK SEMUA KEBUTUHAN ANDA',20,406,21,'rgba(255,255,255,0.92)');TX('Terjemahan akurat, cepat & profesional.',20,432,17,'rgba(255,255,255,0.65)','left',false);
     const sy3=460;
     svcs.forEach((s,i)=>{const sx=20+(i%2)*W*.27,sy=sy3+Math.floor(i/2)*80;RR(sx,sy,W*.25,68,8,'rgba(255,255,255,0.12)');LN(sx,sy,W*.25,t.gd,3);TX(s[0]+' '+s[1],sx+10,sy+28,17,'#fff');TX(s[2],sx+10,sy+48,13,'rgba(255,255,255,0.65)','left',false);});
-    drawBadge(Math.round(W*.6),sy3+100,50);drawLangBox(Math.round(W*.63),sy3+18,Math.round(W*.35),182);drawFooter();
+    drawBadge(Math.round(W*.6),sy3+100,50);drawLangBox(Math.round(W*.63),sy3+18,Math.round(W*.35),196);drawFooter();
   }
 }
 
