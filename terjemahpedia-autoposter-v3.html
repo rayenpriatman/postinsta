@@ -1213,15 +1213,17 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     :[['🎯','AKURAT & BERKUALITAS','Hasil tepat & sesuai konteks'],['⏱','CEPAT & TEPAT','Selesai sesuai deadline'],['🛡','AMAN & TERPERCAYA','Kerahasiaan terjamin'],['🌐','50+ BAHASA TERSEDIA','Inggris, Arab, Mandarin & lainnya']];
 
   const FY=H-88;
-  // Helper gambar foto fit — fill seluruh canvas dengan t.bg dulu biar PNG transparan blend
+  // Pastikan seluruh canvas sudah di-fill t.bg sebelum gambar foto
+  // Ini mencegah area transparan PNG jadi hitam
   const pf=(px,py,pw,ph,align='right')=>{
     const ir=photoImg.width/photoImg.height;let dh=ph,dw=dh*ir;
     if(dw>pw){dw=pw;dh=dw/ir;}if(dh>ph){dh=ph;dw=dh*ir;}
     const dx=align==='right'?px+pw-dw:align==='left'?px:px+(pw-dw)/2;
     const dy=py+ph-dh;
-    // Fill area foto dengan warna bg sebelum gambar PNG
-    ctx.fillStyle=t.bg;ctx.fillRect(Math.round(dx),Math.round(dy),Math.round(dw),Math.round(dh));
-    ctx.drawImage(photoImg,dx,dy,dw,dh);return {dx,dy,dw,dh};
+    // Fill SELURUH canvas dengan t.bg dulu (bukan hanya area foto)
+    ctx.fillStyle=t.bg;ctx.fillRect(0,0,W,H);
+    ctx.drawImage(photoImg,dx,dy,dw,dh);
+    return {dx,dy,dw,dh};
   };
 
   FR(0,0,W,H,t.bg);applyDec();
@@ -1260,7 +1262,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   else if(designIdx===2){
     const sp=Math.round(FY*0.5);
     const ir=photoImg.width/photoImg.height;let dh=sp,dw=dh*ir;if(dw>W){dw=W;dh=dw/ir;}
-    FR(0,0,W,sp,t.bg);ctx.drawImage(photoImg,(W-dw)/2,sp-dh,dw,dh);
+    ctx.fillStyle=t.bg;ctx.fillRect(0,0,W,H);ctx.drawImage(photoImg,(W-dw)/2,sp-dh,dw,dh);
     ctx.fillStyle=GR(0,0,0,sp,[0,'transparent'],[.5,'rgba(0,0,0,0.3)'],[1,'rgba(0,0,0,0.85)']);ctx.fillRect(0,0,W,sp);
     drawLogo(18,18,72,true);drawAZ(W-80,55,34);
     TX(diskon?`DISKON ${diskon}%`:'JASA TERJEMAH',18,sp-100,80,'#fff');TX(diskon?'SPESIAL!':'PROFESIONAL & TERPERCAYA',18,sp-35,28,t.gd);
@@ -1273,7 +1275,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   // 3: FOTO FULL BG OVERLAY
   else if(designIdx===3){
     const ir=photoImg.width/photoImg.height;let dh=FY,dw=dh*ir;if(dw<W){dw=W;dh=dw/ir;}
-    FR(0,0,W,FY,t.bg);ctx.drawImage(photoImg,(W-dw)/2,FY-dh,dw,dh);
+    ctx.fillStyle=t.bg;ctx.fillRect(0,0,W,H);ctx.drawImage(photoImg,(W-dw)/2,FY-dh,dw,dh);
     ctx.fillStyle=GR(0,0,W,0,[0,'rgba(0,0,0,0.88)'],[.55,'rgba(0,0,0,0.7)'],[.8,'rgba(0,0,0,0.2)'],[1,'transparent']);ctx.fillRect(0,0,W,FY);
     drawLogo(18,18,76,true);TX(brand,106,48,16,'#fff');TX('Jasa Terjemah Pro',106,68,12,'rgba(255,255,255,0.6)','left',false);drawAZ(500,55,36);
     const fs=autoT(18,170,520,112,'#fff',t.gd);const cy=170+fs*2+16;
