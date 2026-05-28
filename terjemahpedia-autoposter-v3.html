@@ -1213,14 +1213,15 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     :[['🎯','AKURAT & BERKUALITAS','Hasil tepat & sesuai konteks'],['⏱','CEPAT & TEPAT','Selesai sesuai deadline'],['🛡','AMAN & TERPERCAYA','Kerahasiaan terjamin'],['🌐','50+ BAHASA TERSEDIA','Inggris, Arab, Mandarin & lainnya']];
 
   const FY=H-88;
-  // Helper gambar foto fit — background warna tema dulu biar PNG transparan tidak hitam
+  // Helper gambar foto fit — fill seluruh canvas dengan t.bg dulu biar PNG transparan blend
   const pf=(px,py,pw,ph,align='right')=>{
-    // Isi background area foto dengan warna tema
-    FR(Math.round(px),Math.round(py),Math.round(pw),Math.round(ph),t.bg);
     const ir=photoImg.width/photoImg.height;let dh=ph,dw=dh*ir;
     if(dw>pw){dw=pw;dh=dw/ir;}if(dh>ph){dh=ph;dw=dh*ir;}
     const dx=align==='right'?px+pw-dw:align==='left'?px:px+(pw-dw)/2;
-    const dy=py+ph-dh;ctx.drawImage(photoImg,dx,dy,dw,dh);return {dx,dy,dw,dh};
+    const dy=py+ph-dh;
+    // Fill area foto dengan warna bg sebelum gambar PNG
+    ctx.fillStyle=t.bg;ctx.fillRect(Math.round(dx),Math.round(dy),Math.round(dw),Math.round(dh));
+    ctx.drawImage(photoImg,dx,dy,dw,dh);return {dx,dy,dw,dh};
   };
 
   FR(0,0,W,H,t.bg);applyDec();
