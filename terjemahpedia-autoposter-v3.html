@@ -125,8 +125,37 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
       <label>Perintah konten</label>
       <input type="text" id="feed-cmd" placeholder="buat poster terjemahpedia jasa terjemah no kontak 082323963884" onkeydown="if(event.key==='Enter')runFeed()">
     </div>
+
+    <!-- Upload foto & logo -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <!-- Foto model -->
+      <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-photo-input').click()" id="photo-drop">
+        <input type="file" id="feed-photo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('photo',this)">
+        <div id="photo-preview" style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
+          <div style="text-align:center;color:#aaa;">
+            <div style="font-size:32px;">👤</div>
+            <div style="font-size:12px;margin-top:4px;">Upload Foto Model</div>
+            <div style="font-size:11px;color:#bbb;">PNG transparan lebih bagus</div>
+          </div>
+        </div>
+        <div id="photo-status" style="font-size:11px;color:#888;margin-top:6px;"></div>
+      </div>
+      <!-- Logo -->
+      <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-logo-input').click()" id="logo-drop">
+        <input type="file" id="feed-logo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('logo',this)">
+        <div id="logo-preview" style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
+          <div style="text-align:center;color:#aaa;">
+            <div style="font-size:32px;">🔲</div>
+            <div style="font-size:12px;margin-top:4px;">Upload Logo</div>
+            <div style="font-size:11px;color:#bbb;">PNG transparan</div>
+          </div>
+        </div>
+        <div id="logo-status" style="font-size:11px;color:#888;margin-top:6px;"></div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#aaa;margin-bottom:14px;">📸 Foto & logo tersimpan di browser — tidak perlu upload ulang setiap kali</p>
+
     <button class="btn btn-ig btn-full" onclick="runFeed()" id="feed-btn">🚀 Generate & Post ke Feed</button>
-    <p class="hint" style="margin-top:8px;">Poster akan di-generate otomatis dengan desain random dan diposting ke Feed Instagram.</p>
   </div>
 
   <div class="progress" id="feed-progress">
@@ -422,6 +451,7 @@ window.onload = () => {
   checkMusicStatus();
   updateMusicUploadUI();
   checkMusicSimple();
+  loadSavedAssets();
 };
 
 // ===================== FEED =====================
@@ -694,9 +724,22 @@ async function genImage(cmd) {
   const isDoc=cmd.toLowerCase().includes('dokumen')||cmd.toLowerCase().includes('resmi');
   const isMulti=cmd.toLowerCase().includes('multibahasa');
   const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
-  const template=rand(0,7);
 
+  // Load foto & logo kalau ada
+  const [photoImg, logoImg] = await Promise.all([
+    feedAssets.photo ? loadImageFromUrl(feedAssets.photo).catch(()=>null) : null,
+    feedAssets.logo ? loadImageFromUrl(feedAssets.logo).catch(()=>null) : null,
+  ]);
+
+  // Kalau ada foto → pakai template profesional dengan foto
+  if(photoImg) {
+    await drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, photoImg, logoImg, rand});
+    return canvas.toDataURL('image/jpeg',0.95);
+  }
+
+  // Tanpa foto → template random
   const W=1080,H=1080;
+  const template=rand(0,7);
   const services=isDoc?['Terjemah Dokumen Resmi','Tersumpah & Legalisir','Multibahasa','Cepat & Akurat']:
     isMulti?['Inggris & Arab','Jepang & Korea','Mandarin & Prancis','Cepat & Tepat']:
     ['Terjemah Dokumen','Multibahasa','Cepat & Tepat','Terjemah Resmi'];
@@ -1079,7 +1122,357 @@ async function genImage(cmd) {
 
 
 
-// ===================== GENERATE REELS VIDEO =====================
+// ===================== TEMPLATE PROFESIONAL DENGAN FOTO =====================
+async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, photoImg, logoImg, rand}) {
+  const W=1080, H=1080;
+  const layout = rand(0,5);
+
+  const services = isDoc
+    ?['Terjemah Dokumen Resmi','Tersumpah & Legalisir','Multibahasa','Cepat & Akurat']
+    :isMulti
+    ?['Inggris, Arab, Mandarin','Jepang, Korea & Prancis','Jerman & lainnya','Tepat & Cepat']
+    :['Terjemah Dokumen','Multibahasa','Cepat & Tepat','Terjemah Resmi'];
+
+  const langs = ['🇬🇧 Inggris','🇸🇦 Arab','🇨🇳 Mandarin','🇯🇵 Jepang','🇰🇷 Korea','🇩🇪 Jerman','🇫🇷 Prancis','+ lainnya'];
+
+  // Helper draw foto dengan clip
+  const drawPhoto = (x,y,w,h,rounded=0) => {
+    ctx.save();
+    if(rounded){ctx.beginPath();ctx.roundRect(x,y,w,h,rounded);ctx.clip();}
+    else{ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();}
+    const r=photoImg.width/photoImg.height, ar=w/h;
+    let sw,sh,sx,sy;
+    if(r>ar){sh=photoImg.height;sw=sh*ar;sx=(photoImg.width-sw)/2;sy=0;}
+    else{sw=photoImg.width;sh=sw/ar;sx=0;sy=(photoImg.height-sh)/2;}
+    ctx.drawImage(photoImg,sx,sy,sw,sh,x,y,w,h);
+    ctx.restore();
+  };
+
+  const drawLogo = (x,y,size) => {
+    if(!logoImg) return;
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x,y,size,size,size*0.15); ctx.clip();
+    ctx.fillStyle='#fff'; ctx.fillRect(x,y,size,size);
+    const lr=logoImg.width/logoImg.height;
+    if(lr>1) ctx.drawImage(logoImg,x,y+(size-size/lr)/2,size,size/lr);
+    else ctx.drawImage(logoImg,x+(size-size*lr)/2,y,size*lr,size);
+    ctx.restore();
+  };
+
+  const rRect=(x,y,w,h,r,fill)=>{ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();};
+
+  // ====== LAYOUT 0: HERO SPLIT — foto kanan, konten kiri ======
+  if(layout===0){
+    const accent='#1B6B3A', bg='#FFFFFF';
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Foto kanan
+    drawPhoto(W*0.48,0,W*0.52,H);
+    // Overlay gradasi
+    const g=ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,bg); g.addColorStop(0.52,bg); g.addColorStop(0.72,'rgba(255,255,255,0.6)'); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    // Aksen kiri
+    ctx.fillStyle=accent; ctx.fillRect(0,0,10,H);
+    // Header
+    drawLogo(24,24,80);
+    const lx=logoImg?118:24;
+    ctx.fillStyle=accent; ctx.font='bold 24px Arial'; ctx.textAlign='left'; ctx.fillText('TERJEMAHPEDIA',lx,58);
+    ctx.fillStyle='#888'; ctx.font='16px Arial'; ctx.fillText('Jasa Terjemah Profesional',lx,82);
+    // Judul
+    if(diskon){
+      ctx.fillStyle=accent; ctx.font='bold 65px Arial'; ctx.fillText('DISKON',24,220);
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 150px Arial'; ctx.fillText(diskon+'%',24,375);
+      ctx.fillStyle=accent; ctx.font='bold 38px Arial'; ctx.fillText('SPESIAL!',24,425);
+    } else {
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 95px Arial'; ctx.fillText('JASA',24,220);
+      ctx.fillStyle=accent; ctx.font='bold 95px Arial'; ctx.fillText('TERJEMAH',24,325);
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 38px Arial'; ctx.fillText('PROFESIONAL',24,375);
+    }
+    // Garis
+    const lg=ctx.createLinearGradient(24,0,520,0); lg.addColorStop(0,accent); lg.addColorStop(1,'transparent');
+    ctx.fillStyle=lg; ctx.fillRect(24,400,500,4);
+    // Tagline
+    ctx.fillStyle='#555'; ctx.font='22px Arial';
+    ctx.fillText('Terjemahan akurat, cepat & profesional',24,438);
+    // Layanan
+    services.forEach((s,i)=>{
+      const x=24+(i%2)*265, y=470+Math.floor(i/2)*78;
+      rRect(x,y,248,65,10,'#E8F5EE');
+      ctx.fillStyle=accent; ctx.font='bold 16px Arial'; ctx.fillText('✦',x+12,y+38);
+      ctx.fillStyle='#1A1A1A'; ctx.font='18px Arial'; ctx.fillText(s,x+32,y+38);
+    });
+    // Bahasa
+    ctx.fillStyle=accent; ctx.fillRect(24,640,500,3);
+    ctx.fillStyle='#333'; ctx.font='bold 16px Arial'; ctx.fillText('BAHASA LAYANAN',24,668);
+    langs.forEach((l,i)=>{ ctx.fillStyle='#555'; ctx.font='17px Arial'; ctx.fillText(l,24+(i%4)*130,695+Math.floor(i/4)*26); });
+    // Footer
+    ctx.fillStyle=accent; ctx.fillRect(0,H-95,W*0.54,95);
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='16px Arial'; ctx.fillText('HUBUNGI KAMI',20,H-68);
+    ctx.fillStyle='#fff'; ctx.font='bold 42px Arial'; ctx.fillText(phone,20,H-22);
+    ctx.fillStyle='#555'; ctx.fillRect(W*0.54,H-95,W*0.46,95);
+    ctx.fillStyle='#fff'; ctx.font='16px Arial'; ctx.textAlign='center';
+    ['PROFESIONAL','TERPERCAYA','CEPAT'].forEach((b,i)=>{ ctx.fillText(b,W*0.54+75+i*145,H-35); });
+  }
+
+  // ====== LAYOUT 1: DARK PREMIUM — foto kiri, konten kanan ======
+  else if(layout===1){
+    const accent='#D4AF37', bg='#0A0A0A';
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Grid subtle
+    ctx.strokeStyle='rgba(255,255,255,0.03)'; ctx.lineWidth=1;
+    for(let i=0;i<W;i+=60){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+    // Foto kiri dengan overlay
+    drawPhoto(0,0,W*0.48,H);
+    const gl=ctx.createLinearGradient(0,0,W,0);
+    gl.addColorStop(0,'rgba(10,10,10,0.3)'); gl.addColorStop(0.45,'rgba(10,10,10,0.8)'); gl.addColorStop(0.5,bg); gl.addColorStop(1,bg);
+    ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
+    // Aksen emas kanan
+    ctx.fillStyle=accent; ctx.fillRect(W-8,0,8,H);
+    // Header kanan
+    const rx=W*0.52+10;
+    drawLogo(rx,24,70);
+    const ltx=logoImg?rx+80:rx;
+    ctx.fillStyle=accent; ctx.font='bold 20px Arial'; ctx.textAlign='left'; ctx.fillText('TERJEMAHPEDIA',ltx,55);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='15px Arial'; ctx.fillText('Premium Translation',ltx,78);
+    // Judul kanan
+    if(diskon){
+      ctx.fillStyle='#fff'; ctx.font='bold 55px Arial'; ctx.fillText('DISKON SPESIAL',rx,210);
+      ctx.fillStyle=accent; ctx.font='bold 130px Arial'; ctx.fillText(diskon+'%',rx,345);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='22px Arial'; ctx.fillText('— JASA',rx,185);
+      ctx.fillStyle='#fff'; ctx.font='bold 85px Arial'; ctx.fillText('TERJEMAH',rx,280);
+      ctx.fillStyle=accent; ctx.font='bold 55px Arial'; ctx.fillText('PROFESIONAL',rx,345);
+    }
+    // Garis emas
+    const gg=ctx.createLinearGradient(rx,0,rx+450,0); gg.addColorStop(0,accent); gg.addColorStop(1,'transparent');
+    ctx.fillStyle=gg; ctx.fillRect(rx,370,450,2);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='20px Arial';
+    ctx.fillText('Terjemahan berkualitas tinggi',rx,400);
+    ctx.fillText('untuk semua kebutuhan Anda.',rx,428);
+    // Layanan kanan
+    services.forEach((s,i)=>{
+      const y=460+i*72;
+      ctx.strokeStyle=accent+'44'; ctx.lineWidth=1; ctx.strokeRect(rx,y,W-rx-20,60);
+      ctx.fillStyle=accent; ctx.font='bold 18px Arial'; ctx.fillText('◆',rx+12,y+36);
+      ctx.fillStyle='#fff'; ctx.font='20px Arial'; ctx.fillText(s,rx+36,y+36);
+    });
+    // Footer
+    ctx.fillStyle=accent; ctx.fillRect(W*0.48,H-90,W*0.52,90);
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(W*0.48,H-90,W*0.52,90);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='15px Arial'; ctx.fillText('HUBUNGI:',rx,H-62);
+    ctx.fillStyle='#fff'; ctx.font='bold 38px Arial'; ctx.fillText(phone,rx,H-20);
+  }
+
+  // ====== LAYOUT 2: MAGAZINE — foto atas, info bawah ======
+  else if(layout===2){
+    const accent='#C0392B', bg='#FFFFFF';
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Foto atas (60%)
+    drawPhoto(0,0,W,H*0.6);
+    // Overlay gelap bawah
+    const gt=ctx.createLinearGradient(0,0,0,H*0.6);
+    gt.addColorStop(0,'rgba(0,0,0,0.1)'); gt.addColorStop(0.7,'rgba(0,0,0,0.6)'); gt.addColorStop(1,'rgba(0,0,0,0.9)');
+    ctx.fillStyle=gt; ctx.fillRect(0,0,W,H*0.6);
+    // Teks di atas foto
+    drawLogo(30,30,75);
+    ctx.fillStyle='#fff'; ctx.font='bold 22px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA',logoImg?118:30,60);
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='16px Arial';
+    ctx.fillText('Jasa Terjemah Profesional',logoImg?118:30,84);
+    // Judul di overlay bawah foto
+    if(diskon){
+      ctx.fillStyle=accent; ctx.font='bold 65px Arial'; ctx.fillText('DISKON '+diskon+'%',30,H*0.6-90);
+    } else {
+      ctx.fillStyle='#fff'; ctx.font='bold 90px Arial'; ctx.fillText('JASA TERJEMAH',30,H*0.6-100);
+      ctx.fillStyle=accent; ctx.font='bold 52px Arial'; ctx.fillText('PROFESIONAL & TERPERCAYA',30,H*0.6-40);
+    }
+    // Panel bawah putih
+    ctx.fillStyle='#fff'; ctx.fillRect(0,H*0.6,W,H*0.4);
+    ctx.fillStyle=accent; ctx.fillRect(0,H*0.6,W,6);
+    // Layanan 2x2
+    services.forEach((s,i)=>{
+      const x=20+(i%2)*520, y=H*0.6+25+Math.floor(i/2)*80;
+      rRect(x,y,500,68,8,i%2===0?'#FEF0EF':'#F9F9F9');
+      ctx.fillStyle=accent; ctx.font='bold 22px Arial'; ctx.fillText((i+1)+'.',x+14,y+42);
+      ctx.fillStyle='#1A1A1A'; ctx.font='20px Arial'; ctx.fillText(s,x+45,y+42);
+    });
+    // Footer
+    ctx.fillStyle=accent; ctx.fillRect(0,H-75,W,75);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='16px Arial'; ctx.fillText('HUBUNGI KAMI:',20,H-48);
+    ctx.fillStyle='#fff'; ctx.font='bold 40px Arial'; ctx.fillText(phone,20,H-10);
+    ctx.textAlign='right'; ctx.font='18px Arial';
+    langs.slice(0,4).forEach((l,i)=>{ ctx.fillText(l,W-20,H-55+i*18); });
+    ctx.textAlign='left';
+  }
+
+  // ====== LAYOUT 3: CLEAN CARD — foto tengah, teks sekitar ======
+  else if(layout===3){
+    const accent='#2C3E8C', bg='#F0F4FF';
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Header band
+    ctx.fillStyle=accent; ctx.fillRect(0,0,W,140);
+    drawLogo(24,25,90);
+    ctx.fillStyle='#fff'; ctx.font='bold 28px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA',logoImg?128:24,65);
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='18px Arial';
+    ctx.fillText('Solusi Terjemahan Terpercaya',logoImg?128:24,95);
+    // Badge kanan header
+    rRect(W-240,20,220,100,12,'rgba(255,255,255,0.15)');
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Arial'; ctx.textAlign='center';
+    ctx.fillText('1000+ KLIEN PUAS',W-130,55);
+    ctx.fillText('50+ BAHASA',W-130,80);
+    ctx.fillText('AKURAT & CEPAT',W-130,105);
+    ctx.textAlign='left';
+    // Foto tengah-kanan
+    drawPhoto(W*0.5,140,W*0.5,H*0.55,0);
+    const gm=ctx.createLinearGradient(W*0.5,0,W,0);
+    gm.addColorStop(0,bg); gm.addColorStop(0.15,'transparent');
+    ctx.fillStyle=gm; ctx.fillRect(W*0.5,140,W*0.5,H*0.55);
+    // Judul kiri
+    if(diskon){
+      ctx.fillStyle=accent; ctx.font='bold 70px Arial'; ctx.fillText('DISKON',24,230);
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 150px Arial'; ctx.fillText(diskon+'%',24,390);
+    } else {
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 85px Arial'; ctx.fillText('JASA',24,250);
+      ctx.fillStyle=accent; ctx.font='bold 85px Arial'; ctx.fillText('TERJEMAH',24,345);
+      ctx.fillStyle='#333'; ctx.font='bold 32px Arial'; ctx.fillText('PROFESIONAL',24,392);
+    }
+    ctx.fillStyle='#666'; ctx.font='20px Arial';
+    ctx.fillText('Terjemahan berkualitas',24,430);
+    ctx.fillText('untuk semua kebutuhan.',24,458);
+    // Panel layanan bawah
+    ctx.fillStyle='#fff'; ctx.fillRect(0,H*0.55+140,W,H-(H*0.55+140));
+    ctx.fillStyle=accent; ctx.fillRect(0,H*0.55+140,W,5);
+    services.forEach((s,i)=>{
+      const x=20+(i%2)*525, y=H*0.55+165+Math.floor(i/2)*82;
+      rRect(x,y,505,68,10,i%2===0?'#E8EEFA':'#F0F4FF');
+      ctx.fillStyle=accent; ctx.font='bold 24px Arial'; ctx.fillText('→',x+12,y+42);
+      ctx.fillStyle='#1A1A1A'; ctx.font='20px Arial'; ctx.fillText(s,x+40,y+42);
+    });
+    // Footer
+    ctx.fillStyle=accent; ctx.fillRect(0,H-80,W,80);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='16px Arial'; ctx.fillText('WA / TELP:',20,H-52);
+    ctx.fillStyle='#fff'; ctx.font='bold 42px Arial'; ctx.fillText(phone,20,H-12);
+    ctx.textAlign='right'; ctx.font='16px Arial'; ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.fillText('Konsultasi Gratis!',W-20,H-20);
+    ctx.textAlign='left';
+  }
+
+  // ====== LAYOUT 4: BOLD DIAGONAL — foto dalam shape miring ======
+  else if(layout===4){
+    const accent='#6C3483', bg='#FFFFFF';
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Panel ungu diagonal kiri
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(0,0); ctx.lineTo(W*0.55,0); ctx.lineTo(W*0.4,H); ctx.lineTo(0,H);
+    ctx.closePath(); ctx.fillStyle=accent; ctx.fill(); ctx.restore();
+    // Foto dalam shape kanan
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(W*0.48,0); ctx.lineTo(W,0); ctx.lineTo(W,H); ctx.lineTo(W*0.33,H);
+    ctx.closePath(); ctx.clip();
+    drawPhoto(W*0.33,0,W*0.67,H);
+    ctx.restore();
+    // Overlay pada foto
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(W*0.48,0); ctx.lineTo(W,0); ctx.lineTo(W,H); ctx.lineTo(W*0.33,H);
+    ctx.closePath(); ctx.clip();
+    const gd=ctx.createLinearGradient(W*0.33,0,W,0);
+    gd.addColorStop(0,'rgba(108,52,131,0.5)'); gd.addColorStop(0.4,'rgba(108,52,131,0.1)'); gd.addColorStop(1,'transparent');
+    ctx.fillStyle=gd; ctx.fillRect(W*0.33,0,W*0.67,H); ctx.restore();
+    // Konten kiri (di atas panel ungu)
+    drawLogo(24,24,75);
+    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.font='bold 20px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA',logoImg?112:24,58);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='15px Arial';
+    ctx.fillText('Jasa Terjemah Pro',logoImg?112:24,80);
+    if(diskon){
+      ctx.fillStyle='#FFD700'; ctx.font='bold 70px Arial'; ctx.fillText('DISKON',24,220);
+      ctx.fillStyle='#fff'; ctx.font='bold 140px Arial'; ctx.fillText(diskon+'%',24,370);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold 45px Arial'; ctx.fillText('JASA',24,210);
+      ctx.fillStyle='#FFD700'; ctx.font='bold 80px Arial'; ctx.fillText('TERJEMAH',24,300);
+      ctx.fillStyle='#fff'; ctx.font='bold 42px Arial'; ctx.fillText('PROFESIONAL',24,355);
+    }
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillRect(24,375,320,3);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='20px Arial';
+    ctx.fillText('Akurat, Cepat & Terpercaya',24,408);
+    // Layanan kiri
+    services.forEach((s,i)=>{
+      const y=445+i*68;
+      rRect(24,y,330,55,8,'rgba(255,255,255,0.15)');
+      ctx.fillStyle='#FFD700'; ctx.font='bold 18px Arial'; ctx.fillText('▶',36,y+33);
+      ctx.fillStyle='#fff'; ctx.font='18px Arial'; ctx.fillText(s,58,y+33);
+    });
+    // Footer
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,H-90,W,90);
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='15px Arial'; ctx.fillText('HUBUNGI KAMI:',20,H-60);
+    ctx.fillStyle='#fff'; ctx.font='bold 42px Arial'; ctx.fillText(phone,20,H-15);
+    ctx.textAlign='right';
+    langs.slice(0,4).forEach((l,i)=>{ ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='17px Arial'; ctx.fillText(l,W-20,H-70+i*20); });
+    ctx.textAlign='left';
+  }
+
+  // ====== LAYOUT 5: INFOGRAPHIC MODERN — foto circle, konten grid ======
+  else if(layout===5){
+    const accent='#E67E22', bg='#FAFAFA';
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Header oranye
+    ctx.fillStyle=accent; ctx.fillRect(0,0,W,160);
+    // Foto lingkaran di header
+    ctx.save();
+    ctx.beginPath(); ctx.arc(W-120,80,100,0,Math.PI*2); ctx.clip();
+    drawPhoto(W-220,-20,200,200);
+    ctx.restore();
+    // Border lingkaran
+    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.arc(W-120,80,100,0,Math.PI*2); ctx.stroke();
+    // Header text
+    drawLogo(20,20,80);
+    ctx.fillStyle='#fff'; ctx.font='bold 28px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA',logoImg?114:20,55);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='18px Arial';
+    ctx.fillText('Jasa Terjemah Profesional & Terpercaya',logoImg?114:20,82);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='16px Arial';
+    ctx.fillText('Akurat • Cepat • Terpercaya',logoImg?114:20,108);
+    // Konten utama
+    if(diskon){
+      ctx.fillStyle=accent; ctx.font='bold 80px Arial'; ctx.fillText('DISKON '+diskon+'%',30,270);
+      ctx.fillStyle='#333'; ctx.font='bold 40px Arial'; ctx.fillText('PENAWARAN SPESIAL!',30,325);
+    } else {
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 100px Arial'; ctx.fillText('JASA',30,270);
+      ctx.fillStyle=accent; ctx.font='bold 100px Arial'; ctx.fillText('TERJEMAH',30,375);
+      ctx.fillStyle='#333'; ctx.font='bold 38px Arial'; ctx.fillText('PROFESIONAL',30,420);
+    }
+    ctx.fillStyle='#666'; ctx.font='22px Arial'; ctx.fillText('Terjemahan akurat untuk semua kebutuhan.',30,455);
+    // Divider
+    ctx.fillStyle='#ddd'; ctx.fillRect(20,478,W-40,2);
+    // Layanan cards berwarna
+    const svcColors=['#E74C3C','#3498DB','#27AE60','#9B59B6'];
+    services.forEach((s,i)=>{
+      const x=20+(i%2)*530, y=495+Math.floor(i/2)*90;
+      rRect(x,y,510,75,12,svcColors[i]+'22');
+      ctx.fillStyle=svcColors[i]; ctx.fillRect(x,y,6,75);
+      ctx.fillStyle='#1A1A1A'; ctx.font='bold 20px Arial'; ctx.fillText(s,x+22,y+45);
+    });
+    // Bahasa
+    ctx.fillStyle='#ddd'; ctx.fillRect(20,700,W-40,2);
+    ctx.fillStyle='#333'; ctx.font='bold 18px Arial'; ctx.fillText('BAHASA YANG KAMI LAYANI',20,730);
+    langs.forEach((l,i)=>{ ctx.fillStyle='#555'; ctx.font='18px Arial'; ctx.fillText(l,20+(i%4)*260,760+Math.floor(i/4)*28); });
+    // Footer
+    ctx.fillStyle=accent; ctx.fillRect(0,H-90,W,90);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='16px Arial'; ctx.fillText('HUBUNGI KAMI:',20,H-60);
+    ctx.fillStyle='#fff'; ctx.font='bold 42px Arial'; ctx.fillText(phone,20,H-15);
+    ctx.textAlign='right'; ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='18px Arial';
+    ctx.fillText('Konsultasi Gratis!',W-20,H-40);
+    ctx.fillText('www.terjemahpedia.com',W-20,H-15);
+    ctx.textAlign='left';
+  }
+}
+
+
+
+
+
 async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3) {
   const phone=cmd.match(/0\d{9,11}/)?.[0]||'082323963884';
   const hasDiskon=cmd.match(/diskon\s*(\d+)%/i); const diskon=hasDiskon?hasDiskon[1]:null;
@@ -1319,7 +1712,61 @@ async function testCloudinary() {
   }
 }
 
-// ===================== MUSIK PLAYLIST =====================
+// ===================== FEED ASSETS (foto & logo) =====================
+const feedAssets = { photo: null, logo: null };
+
+async function loadFeedAsset(type, input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    // Simpan ke localStorage
+    try { localStorage.setItem('ap_feed_'+type, dataUrl); } catch(e) {}
+    feedAssets[type] = dataUrl;
+    updateAssetPreview(type, dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateAssetPreview(type, dataUrl) {
+  const preview = document.getElementById(type+'-preview');
+  const status = document.getElementById(type+'-status');
+  if(!preview) return;
+  preview.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
+  if(status) status.innerHTML = `<span style="color:#3b6d11">✅ Tersimpan</span>
+    <button onclick="removeFeedAsset('${type}')" style="margin-left:8px;background:none;border:none;cursor:pointer;color:#E24B4A;font-size:11px;">✕ Hapus</button>`;
+}
+
+function removeFeedAsset(type) {
+  localStorage.removeItem('ap_feed_'+type);
+  feedAssets[type] = null;
+  const preview = document.getElementById(type+'-preview');
+  const status = document.getElementById(type+'-status');
+  const icons = {photo:'👤', logo:'🔲'};
+  const labels = {photo:'Upload Foto Model', logo:'Upload Logo'};
+  const hints = {photo:'PNG transparan lebih bagus', logo:'PNG transparan'};
+  if(preview) preview.innerHTML = `<div style="text-align:center;color:#aaa;"><div style="font-size:32px;">${icons[type]}</div><div style="font-size:12px;margin-top:4px;">${labels[type]}</div><div style="font-size:11px;color:#bbb;">${hints[type]}</div></div>`;
+  if(status) status.innerHTML = '';
+}
+
+function loadSavedAssets() {
+  ['photo','logo'].forEach(type => {
+    const saved = localStorage.getItem('ap_feed_'+type);
+    if(saved) { feedAssets[type] = saved; updateAssetPreview(type, saved); }
+  });
+}
+
+function loadImageFromUrl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+
 let selectedMusicId = null;
 
 function openMusicDB() {
