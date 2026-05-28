@@ -91,6 +91,13 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
 
 .spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
 @media(max-width:520px){.media-grid{grid-template-columns:1fr;}.row{grid-template-columns:1fr;}.reels-steps{grid-template-columns:1fr;}}
+.music-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;transition:all 0.15s;font-size:13px;}
+.music-item:hover{border-color:#aaa;background:#f5f5f5;}
+.music-item.active{border-color:#1a1a1a;background:#1a1a1a;color:#fff;}
+.music-del{margin-left:auto;font-size:16px;line-height:1;opacity:0.4;flex-shrink:0;background:none;border:none;cursor:pointer;color:inherit;}
+.music-del:hover{opacity:1;}
+.music-icon{font-size:16px;flex-shrink:0;}
+.music-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -209,16 +216,20 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
         <option value="dark">⚫ Gelap + Orange</option>
       </select>
     </div>
-    <div style="background:#f8f8f6;border:1px dashed #ccc;border-radius:10px;padding:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-      <div>
-        <div style="font-size:13px;color:#555;font-weight:500;">🎵 Background Music</div>
-        <div id="music-status" style="font-size:12px;color:#888;margin-top:2px;">Belum ada musik — upload MP3 bebas copyright</div>
+    <!-- Musik Playlist -->
+    <div style="background:#f8f8f6;border:1px solid #e5e5e5;border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:#555;">🎵 Background Music</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="file" accept="audio/mp3,audio/mpeg,audio/*" id="music-file-input" onchange="addMusicToPlaylist(this)" style="display:none;" multiple>
+          <button class="btn" onclick="document.getElementById('music-file-input').click()" style="font-size:12px;padding:6px 12px;">➕ Tambah MP3</button>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <input type="file" accept="audio/mp3,audio/mpeg,audio/*" id="music-file-input" onchange="loadMusicSimple(this)" style="display:none;">
-        <button class="btn" id="music-upload-btn" onclick="document.getElementById('music-file-input').click()" style="font-size:12px;padding:7px 12px;">📂 Upload MP3</button>
-        <button class="btn" id="music-remove-btn" onclick="removeMusicSimple()" style="font-size:12px;padding:7px 12px;display:none;">🗑️</button>
+      <!-- Playlist -->
+      <div id="music-playlist" style="display:flex;flex-direction:column;gap:6px;min-height:36px;">
+        <div id="music-empty" style="font-size:12px;color:#aaa;text-align:center;padding:8px;">Belum ada musik — klik "Tambah MP3" untuk upload</div>
       </div>
+      <p style="font-size:11px;color:#aaa;margin-top:8px;">Download gratis di <a href="https://pixabay.com/music" target="_blank" style="color:#185fa5;">pixabay.com/music</a> · Bisa tambah banyak lagu · Klik untuk pilih</p>
     </div>
     <button class="btn btn-ig btn-full" onclick="runReels()" id="reels-btn">🎬 Generate Video Reels</button>
   </div>
@@ -683,90 +694,390 @@ async function genImage(cmd) {
   const isDoc=cmd.toLowerCase().includes('dokumen')||cmd.toLowerCase().includes('resmi');
   const isMulti=cmd.toLowerCase().includes('multibahasa');
   const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+  const template=rand(0,7);
 
-  const themes=[
-    {bg1:'#0d1b4b',bg2:'#1a3a7c',acc:'#F5A623',acc2:'#E8860A'},
-    {bg1:'#1a3a1a',bg2:'#2d5a2d',acc:'#FFD700',acc2:'#FFA500'},
-    {bg1:'#4a0a0a',bg2:'#8b1a1a',acc:'#FFD700',acc2:'#FF8C00'},
-    {bg1:'#0a2a4a',bg2:'#0d4f8c',acc:'#00E5FF',acc2:'#00B8D4'},
-    {bg1:'#2a0a4a',bg2:'#5c1a8c',acc:'#FFD700',acc2:'#FF69B4'},
-    {bg1:'#1a1a1a',bg2:'#3a3a3a',acc:'#F5A623',acc2:'#FFD700'},
-    {bg1:'#003333',bg2:'#006666',acc:'#FFD700',acc2:'#ADFF2F'},
-    {bg1:'#1a0a00',bg2:'#4a2000',acc:'#FFD700',acc2:'#FF6347'},
-    {bg1:'#000d1a',bg2:'#001a33',acc:'#00FF88',acc2:'#00CCFF'},
-    {bg1:'#1a001a',bg2:'#3d003d',acc:'#FF69B4',acc2:'#FFD700'},
-  ];
-  const t=themes[rand(0,themes.length-1)]; const layout=rand(0,4);
+  const W=1080,H=1080;
+  const services=isDoc?['Terjemah Dokumen Resmi','Tersumpah & Legalisir','Multibahasa','Cepat & Akurat']:
+    isMulti?['Inggris & Arab','Jepang & Korea','Mandarin & Prancis','Cepat & Tepat']:
+    ['Terjemah Dokumen','Multibahasa','Cepat & Tepat','Terjemah Resmi'];
+  const title=diskon?`DISKON ${diskon}%`:'JASA TERJEMAH';
+  const sub=diskon?'PENAWARAN SPESIAL!':'PROFESIONAL';
 
-  const bgs=[
-    ()=>{const g=ctx.createLinearGradient(0,0,1080,1080);g.addColorStop(0,t.bg1);g.addColorStop(1,t.bg2);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1080);},
-    ()=>{const g=ctx.createRadialGradient(540,540,0,540,540,800);g.addColorStop(0,t.bg2);g.addColorStop(1,t.bg1);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1080);},
-    ()=>{const g=ctx.createLinearGradient(0,0,1080,0);g.addColorStop(0,t.bg1);g.addColorStop(0.5,t.bg2);g.addColorStop(1,t.bg1);ctx.fillStyle=g;ctx.fillRect(0,0,1080,1080);},
-  ];
-  bgs[rand(0,2)]();
+  // Helper teks multiline
+  const wrapText=(text,x,y,maxW,lineH)=>{
+    const words=text.split(' '); let line='';
+    for(let w of words){
+      const test=line?line+' '+w:w;
+      if(ctx.measureText(test).width>maxW&&line){ctx.fillText(line,x,y);line=w;y+=lineH;}
+      else line=test;
+    }
+    ctx.fillText(line,x,y); return y;
+  };
 
-  ctx.globalAlpha=0.07;ctx.fillStyle='#fff';
-  const decs=[
-    ()=>{ctx.beginPath();ctx.arc(950,150,320,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(80,920,260,0,Math.PI*2);ctx.fill();},
-    ()=>{ctx.beginPath();ctx.arc(1080,0,400,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(0,1080,350,0,Math.PI*2);ctx.fill();},
-    ()=>{for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(rand(0,1080),rand(0,1080),rand(80,200),0,Math.PI*2);ctx.fill();}},
-    ()=>{ctx.beginPath();ctx.arc(540,540,460,0,Math.PI*2);ctx.fill();},
-    ()=>{ctx.fillRect(0,400,1080,6);ctx.beginPath();ctx.arc(900,200,250,0,Math.PI*2);ctx.fill();},
-  ];
-  decs[rand(0,4)]();ctx.globalAlpha=1;
-
-  const ag=ctx.createLinearGradient(0,0,1080,0);ag.addColorStop(0,t.acc);ag.addColorStop(1,t.acc2);
-  ctx.fillStyle=ag;ctx.fillRect(0,0,1080,12);
-
-  const layanan=isDoc?['📄 Dokumen Resmi','✅ Tersumpah','🌐 Multibahasa','⚡ Cepat']:isMulti?['🌐 Inggris & Arab','🇯🇵 Jepang & Korea','🇨🇳 Mandarin','⚡ Cepat']:['📄 Terjemah Dokumen','🌐 Multibahasa','⚡ Cepat & Tepat','✅ Resmi'];
-
-  if(layout===0){
-    ctx.fillStyle=t.acc;rr(ctx,60,55,340,65,32);ctx.fillStyle=t.bg1;ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.fillText('✦ TERJEMAHPEDIA ✦',230,97);
-    dg(ctx,840,210,130,t.acc);
-    if(diskon){ctx.fillStyle=t.acc;ctx.font='bold 90px Arial';ctx.textAlign='left';ctx.fillText('DISKON',60,270);ctx.fillStyle='#fff';ctx.font='bold 180px Arial';ctx.fillText(diskon+'%',60,450);ctx.fillStyle=t.acc;ctx.font='bold 65px Arial';ctx.fillText('SPESIAL!',60,520);}
-    else{ctx.fillStyle='#fff';ctx.font='bold 85px Arial';ctx.textAlign='left';ctx.fillText('JASA',60,270);ctx.fillStyle=t.acc;ctx.font='bold 115px Arial';ctx.fillText('TERJEMAH',60,390);ctx.fillStyle='#fff';ctx.font='bold 55px Arial';ctx.fillText('PROFESIONAL',60,460);}
-    const lg=ctx.createLinearGradient(60,0,700,0);lg.addColorStop(0,t.acc);lg.addColorStop(1,'transparent');ctx.fillStyle=lg;ctx.fillRect(60,490,650,4);
-    ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='31px Arial';ctx.textAlign='left';ctx.fillText('Solusi terjemahan terpercaya untuk',60,545);ctx.fillText('bisnis dan kebutuhan pribadi Anda.',60,585);
-    ctx.fillStyle='rgba(255,255,255,0.08)';rr(ctx,60,620,960,230,20);
-    ctx.fillStyle=t.acc;ctx.font='bold 30px Arial';ctx.fillText('LAYANAN KAMI',90,668);
-    layanan.forEach((item,i)=>{ctx.fillStyle='#fff';ctx.font='27px Arial';ctx.fillText(item,90+(i%2)*490,705+Math.floor(i/2)*62);});
-    ['✓ Akurat','✓ Profesional','✓ Terpercaya','✓ Rahasia'].forEach((b,i)=>{ctx.fillStyle=t.acc;ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText(b,150+i*240,910);});
-  } else if(layout===1){
-    ctx.fillStyle=t.acc;ctx.globalAlpha=0.9;ctx.fillRect(720,0,360,1080);ctx.globalAlpha=1;
-    ctx.fillStyle='#fff';ctx.font='bold 30px Arial';ctx.textAlign='left';ctx.fillText('TERJEMAHPEDIA',40,80);ctx.fillStyle=t.acc;ctx.fillRect(40,92,300,4);
-    if(diskon){ctx.fillStyle=t.acc;ctx.font='bold 70px Arial';ctx.fillText('DISKON',40,220);ctx.fillStyle='#fff';ctx.font='bold 160px Arial';ctx.fillText(diskon+'%',40,390);}
-    else{ctx.fillStyle='#fff';ctx.font='bold 75px Arial';ctx.fillText('JASA',40,220);ctx.fillStyle=t.acc;ctx.font='bold 90px Arial';ctx.fillText('TERJEMAH',40,320);ctx.fillStyle='#fff';ctx.font='bold 48px Arial';ctx.fillText('PROFESIONAL',40,390);}
-    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='28px Arial';ctx.fillText('Terjemahan berkualitas',40,450);ctx.fillText('untuk semua kebutuhan.',40,490);
-    layanan.forEach((item,i)=>{ctx.fillStyle=t.acc;ctx.font='bold 26px Arial';ctx.fillText('▸',40,580+i*58);ctx.fillStyle='#fff';ctx.font='24px Arial';ctx.fillText(item.replace(/[^\w\s]/g,'').trim(),70,580+i*58);});
-    ctx.fillStyle=t.bg1;ctx.font='bold 28px Arial';ctx.textAlign='center';ctx.fillText('HUBUNGI',900,380);ctx.fillText(phone.slice(0,7),900,440);ctx.fillText(phone.slice(7),900,480);dg(ctx,900,650,90,'#fff');
-  } else if(layout===2){
-    ctx.textAlign='center';ctx.fillStyle=t.acc;ctx.font='bold 34px Arial';ctx.fillText('✦ TERJEMAHPEDIA ✦',540,120);ctx.fillStyle=t.acc;ctx.fillRect(180,138,720,4);
-    if(diskon){ctx.fillStyle='#fff';ctx.font='bold 80px Arial';ctx.fillText('PROMO',540,260);ctx.fillStyle=t.acc;ctx.font='bold 200px Arial';ctx.fillText(diskon+'%',540,470);ctx.fillStyle='#fff';ctx.font='bold 55px Arial';ctx.fillText('DISKON TERBATAS!',540,560);}
-    else{ctx.fillStyle='#fff';ctx.font='bold 75px Arial';ctx.fillText('JASA TERJEMAH',540,250);ctx.fillStyle=t.acc;ctx.font='bold 120px Arial';ctx.fillText('PROFESIONAL',540,390);ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='36px Arial';ctx.fillText('Akurat • Cepat • Terpercaya',540,460);}
-    ctx.fillStyle=t.acc;ctx.fillRect(150,490,780,4);
-    layanan.forEach((item,i)=>{ctx.fillStyle='rgba(255,255,255,0.1)';rr(ctx,80+(i%2)*510,520+Math.floor(i/2)*80,490,65,12);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.textAlign='center';ctx.fillText(item,325+(i%2)*510,562+Math.floor(i/2)*80);});
-    ctx.fillStyle=t.acc;ctx.font='bold 28px Arial';ctx.fillText('📞 '+phone,540,760);
-  } else if(layout===3){
-    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(1080,0);ctx.lineTo(680,1080);ctx.lineTo(0,1080);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill();ctx.restore();
-    ctx.textAlign='left';ctx.fillStyle=t.acc;ctx.font='bold 36px Arial';ctx.fillText('TERJEMAHPEDIA',60,90);ctx.fillStyle=t.acc;ctx.fillRect(60,105,400,5);
-    if(diskon){ctx.fillStyle=t.acc;ctx.font='bold 75px Arial';ctx.fillText('DISKON '+diskon+'%',60,230);}
-    else{ctx.fillStyle=t.acc;ctx.font='bold 58px Arial';ctx.fillText('JASA',60,220);ctx.fillStyle='#fff';ctx.font='bold 130px Arial';ctx.fillText('TERJEMAH',60,360);ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 50px Arial';ctx.fillText('PROFESIONAL',60,430);}
-    ctx.fillStyle=t.acc;ctx.fillRect(60,465,520,5);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='30px Arial';ctx.fillText('Solusi terjemahan terpercaya',60,515);ctx.fillText('untuk pribadi & bisnis.',60,555);
-    layanan.forEach((item,i)=>{ctx.fillStyle='rgba(255,255,255,0.1)';rr(ctx,60+(i%2)*490,590+Math.floor(i/2)*80,460,65,12);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.fillText(item,108+(i%2)*490,630+Math.floor(i/2)*80);});
-    ctx.fillStyle=t.acc;ctx.font='bold 28px Arial';ctx.fillText('WA: '+phone,60,835);dg(ctx,880,400,140,t.acc);
-  } else {
-    ctx.fillStyle='rgba(255,255,255,0.06)';rr(ctx,40,40,1000,200,20);rr(ctx,40,270,1000,490,20);rr(ctx,40,790,1000,210,20);
-    ctx.fillStyle=t.acc;ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.fillText('✦ TERJEMAHPEDIA ✦',540,115);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.fillText('Jasa Terjemah Profesional & Terpercaya',540,160);dg(ctx,950,140,65,t.acc);
-    if(diskon){ctx.fillStyle='#fff';ctx.font='bold 65px Arial';ctx.fillText('PROMO DISKON '+diskon+'%',540,380);}
-    else{ctx.fillStyle=t.acc;ctx.font='bold 90px Arial';ctx.fillText('JASA TERJEMAH',540,380);ctx.fillStyle='#fff';ctx.font='bold 60px Arial';ctx.fillText('PROFESIONAL',540,458);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='30px Arial';ctx.fillText('Akurat • Cepat • Rahasia • Terpercaya',540,510);}
-    ctx.fillStyle=t.acc;ctx.fillRect(200,558,680,4);
-    layanan.forEach((item,i)=>{ctx.fillStyle='rgba(255,255,255,0.12)';rr(ctx,60+(i%2)*510,585+Math.floor(i/2)*75,490,62,12);ctx.fillStyle='#fff';ctx.font='26px Arial';ctx.textAlign='center';ctx.fillText(item,305+(i%2)*510,625+Math.floor(i/2)*75);});
-    ctx.fillStyle='#25D366';ctx.beginPath();ctx.arc(140,885,40,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText('WA',140,892);ctx.fillStyle=t.acc;ctx.font='bold 44px Arial';ctx.fillText(phone,580,900);ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='24px Arial';ctx.fillText('Bahasa Bukan Penghalang, Kami Jembatannya.',540,950);
+  // =================== TEMPLATE 0: BOLD HERO ===================
+  if(template===0){
+    // Latar putih bersih
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,W,H);
+    // Blok aksen kiri bawah
+    ctx.fillStyle='#0A2540'; ctx.fillRect(0,H-220,W,220);
+    // Sidebar kiri berwarna
+    ctx.fillStyle='#1B6CA8'; ctx.fillRect(0,0,14,H-220);
+    // Header
+    ctx.fillStyle='#0A2540'; ctx.font='bold 24px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA', 40, 55);
+    ctx.fillStyle='#1B6CA8'; ctx.fillRect(40,65,180,4);
+    // Judul besar
+    ctx.fillStyle='#0A2540'; ctx.font='bold 110px Arial';
+    ctx.fillText(diskon?`${diskon}%`:title.split(' ')[0], 40, 230);
+    ctx.fillStyle='#1B6CA8'; ctx.font='bold 72px Arial';
+    ctx.fillText(diskon?'DISKON':title.split(' ').slice(1).join(' ')||'TERJEMAH', 40, 310);
+    ctx.fillStyle='#0A2540'; ctx.font='bold 44px Arial';
+    ctx.fillText(sub, 40, 370);
+    // Garis pemisah
+    ctx.fillStyle='#1B6CA8'; ctx.fillRect(40,395,500,5);
+    // Layanan
+    ctx.font='28px Arial'; ctx.fillStyle='#333';
+    services.forEach((s,i)=>{
+      ctx.fillStyle='#1B6CA8'; ctx.fillText('✦',40,450+i*58);
+      ctx.fillStyle='#222'; ctx.fillText(s,75,450+i*58);
+    });
+    // Badges bawah
+    ['Akurat','Profesional','Terpercaya','Cepat'].forEach((b,i)=>{
+      ctx.fillStyle='rgba(255,255,255,0.15)'; rr(ctx,40+i*250,H-195,230,55,8);
+      ctx.fillStyle='#fff'; ctx.font='bold 22px Arial'; ctx.textAlign='center';
+      ctx.fillText(b,155+i*250,H-160);
+    });
+    // Footer
+    ctx.fillStyle='#fff'; ctx.font='bold 24px Arial'; ctx.textAlign='left';
+    ctx.fillText('Hubungi Kami:', 40, H-110);
+    ctx.font='bold 50px Arial'; ctx.fillText(phone, 40, H-55);
+    ctx.textAlign='right'; ctx.font='20px Arial'; ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.fillText('Bahasa Bukan Penghalang', W-40, H-80);
+    ctx.fillText('Kami Jembatannya', W-40, H-50);
   }
 
-  const fg=ctx.createLinearGradient(0,0,1080,0);fg.addColorStop(0,t.acc);fg.addColorStop(1,t.acc2);ctx.fillStyle=fg;ctx.fillRect(0,1058,1080,22);
+  // =================== TEMPLATE 1: DARK LUXURY ===================
+  else if(template===1){
+    // Background hitam
+    ctx.fillStyle='#0D0D0D'; ctx.fillRect(0,0,W,H);
+    // Grid dekorasi
+    ctx.strokeStyle='rgba(255,200,50,0.06)'; ctx.lineWidth=1;
+    for(let i=0;i<W;i+=90){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+    for(let i=0;i<H;i+=90){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+    // Lingkaran emas besar
+    ctx.strokeStyle='rgba(212,175,55,0.15)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(800,300,350,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(800,300,280,0,Math.PI*2); ctx.stroke();
+    // Label premium
+    ctx.fillStyle='#D4AF37'; ctx.font='bold 18px Arial'; ctx.textAlign='left';
+    ctx.fillText('— PREMIUM TRANSLATION SERVICE —', 40, 80);
+    // Judul
+    ctx.fillStyle='#FFFFFF'; ctx.font='bold 90px Arial';
+    ctx.fillText(diskon?`DISKON`:title.split(' ').slice(0,1).join(' '), 40, 220);
+    ctx.fillStyle='#D4AF37'; ctx.font='bold 90px Arial';
+    ctx.fillText(diskon?`${diskon}%`:title.split(' ').slice(1).join(' ')||'TERJEMAH', 40, 320);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='32px Arial';
+    ctx.fillText(sub, 40, 375);
+    // Garis emas
+    const gg=ctx.createLinearGradient(40,0,600,0);
+    gg.addColorStop(0,'#D4AF37');gg.addColorStop(1,'transparent');
+    ctx.fillStyle=gg; ctx.fillRect(40,395,560,3);
+    // Deskripsi
+    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='26px Arial';
+    ctx.fillText('Solusi terjemahan profesional untuk kebutuhan', 40, 445);
+    ctx.fillText('bisnis, akademik, dan hukum Anda.', 40, 480);
+    // Layanan cards
+    services.forEach((s,i)=>{
+      const x=40+(i%2)*510, y=530+Math.floor(i/2)*85;
+      ctx.strokeStyle='rgba(212,175,55,0.3)'; ctx.lineWidth=1;
+      ctx.strokeRect(x,y,490,70);
+      ctx.fillStyle='rgba(212,175,55,0.05)'; ctx.fillRect(x,y,490,70);
+      ctx.fillStyle='#D4AF37'; ctx.font='bold 16px Arial'; ctx.textAlign='left';
+      ctx.fillText('◆',x+16,y+42);
+      ctx.fillStyle='#fff'; ctx.font='24px Arial'; ctx.fillText(s,x+44,y+42);
+    });
+    // Footer
+    ctx.fillStyle='#D4AF37'; ctx.fillRect(0,H-130,W,2);
+    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.font='28px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA', 40, H-85);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='22px Arial';
+    ctx.fillText(phone, 40, H-48);
+    ctx.fillStyle='#D4AF37'; ctx.font='bold 22px Arial'; ctx.textAlign='right';
+    ctx.fillText('Hubungi Kami Sekarang', W-40, H-65);
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='18px Arial';
+    ctx.fillText('Konsultasi Gratis', W-40, H-38);
+  }
+
+  // =================== TEMPLATE 2: MODERN SPLIT ===================
+  else if(template===2){
+    // Dua panel
+    ctx.fillStyle='#1E3A5F'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,H/2,W,H/2);
+    // Diagonal cut
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(0,H/2-60); ctx.lineTo(W,H/2+60); ctx.lineTo(W,H/2); ctx.lineTo(0,H/2);
+    ctx.closePath(); ctx.fillStyle='#1E3A5F'; ctx.fill(); ctx.restore();
+    // Panel atas — judul
+    ctx.fillStyle='rgba(255,255,255,0.1)'; rr(ctx,40,40,380,50,25);
+    ctx.fillStyle='#fff'; ctx.font='bold 20px Arial'; ctx.textAlign='center';
+    ctx.fillText('TERJEMAHPEDIA', 230, 73);
+    ctx.textAlign='left';
+    ctx.font='bold 100px Arial'; ctx.fillStyle='#fff';
+    ctx.fillText(diskon?`${diskon}%`:title.split(' ')[0], 60, 250);
+    ctx.fillStyle='#64B5F6'; ctx.font='bold 65px Arial';
+    ctx.fillText(diskon?'DISKON!':title.split(' ').slice(1).join(' ')||'TERJEMAH', 60, 330);
+    ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font='28px Arial';
+    ctx.fillText('Akurat • Cepat • Profesional', 60, 380);
+    // Lingkaran dekorasi atas
+    ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(900,200,200,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(900,200,150,0,Math.PI*2); ctx.stroke();
+    // Panel bawah — info
+    services.forEach((s,i)=>{
+      const x=50+(i%2)*520, y=630+Math.floor(i/2)*90;
+      ctx.fillStyle='#E3F2FD'; rr(ctx,x,y,480,72,10);
+      ctx.fillStyle='#1E3A5F'; ctx.font='bold 14px Arial'; ctx.textAlign='left';
+      ctx.fillText('●',x+16,y+42);
+      ctx.fillStyle='#0D2137'; ctx.font='22px Arial'; ctx.fillText(s,x+40,y+42);
+    });
+    // Footer putih
+    ctx.fillStyle='#1E3A5F'; ctx.fillRect(0,H-80,W,80);
+    ctx.fillStyle='#fff'; ctx.font='bold 22px Arial'; ctx.textAlign='left';
+    ctx.fillText('📱  '+phone, 50, H-40);
+    ctx.textAlign='right'; ctx.font='20px Arial';
+    ctx.fillText('Bahasa Bukan Penghalang, Kami Jembatannya', W-40, H-40);
+  }
+
+  // =================== TEMPLATE 3: MINIMALIS MODERN ===================
+  else if(template===3){
+    ctx.fillStyle='#F7F7F2'; ctx.fillRect(0,0,W,H);
+    // Aksen sudut
+    ctx.fillStyle='#2D2D2D'; ctx.fillRect(0,0,W,8);
+    ctx.fillStyle='#E8A020'; ctx.fillRect(0,8,W,8);
+    // Brand
+    ctx.fillStyle='#2D2D2D'; ctx.font='bold 22px Arial'; ctx.textAlign='left';
+    ctx.fillText('TERJEMAHPEDIA', 60, 80);
+    ctx.fillStyle='#E8A020'; ctx.fillRect(60,88,220,3);
+    // Judul sangat besar
+    ctx.fillStyle='#1A1A1A'; ctx.font='bold 130px Arial';
+    if(diskon){
+      ctx.fillText(diskon+'%',60,280);
+      ctx.font='bold 55px Arial'; ctx.fillStyle='#E8A020'; ctx.fillText('DISKON SPESIAL',60,345);
+    } else {
+      ctx.fillText('JASA',60,260);
+      ctx.fillStyle='#E8A020'; ctx.font='bold 130px Arial'; ctx.fillText('TERJEMAH',60,410);
+    }
+    // Tagline
+    ctx.fillStyle='#555'; ctx.font='28px Arial';
+    ctx.fillText('Terjemahan berkualitas tinggi untuk',60,480);
+    ctx.fillText('kebutuhan profesional Anda.',60,515);
+    // Divider
+    ctx.fillStyle='#ddd'; ctx.fillRect(60,545,960,1);
+    // Layanan — minimalis
+    ctx.fillStyle='#1A1A1A'; ctx.font='bold 22px Arial';
+    ctx.fillText('LAYANAN', 60, 590);
+    services.forEach((s,i)=>{
+      const y=625+i*52;
+      ctx.fillStyle='#E8A020'; ctx.fillRect(60,y-4,3,32);
+      ctx.fillStyle='#222'; ctx.font='24px Arial'; ctx.fillText(s,75,y+22);
+      if(i<services.length-1){ctx.fillStyle='#eee';ctx.fillRect(60,y+36,700,1);}
+    });
+    // Footer
+    ctx.fillStyle='#2D2D2D'; ctx.fillRect(0,H-100,W,100);
+    ctx.fillStyle='#fff'; ctx.font='bold 48px Arial'; ctx.textAlign='left';
+    ctx.fillText(phone,60,H-42);
+    ctx.fillStyle='#E8A020'; ctx.font='bold 18px Arial'; ctx.textAlign='right';
+    ctx.fillText('Hubungi Sekarang', W-60, H-42);
+  }
+
+  // =================== TEMPLATE 4: VIBRANT GRADIENT ===================
+  else if(template===4){
+    const colors=[
+      {a:'#FF6B35',b:'#F7C59F',c:'#1A1A2E'},
+      {a:'#6C63FF',b:'#3F3D56',c:'#F9F9F9'},
+      {a:'#11998E',b:'#38EF7D',c:'#0D1B2A'},
+      {a:'#F953C6',b:'#B91D73',c:'#0D0D0D'},
+    ];
+    const pal=colors[rand(0,colors.length-1)];
+    const gr=ctx.createLinearGradient(0,0,W,H);
+    gr.addColorStop(0,pal.a); gr.addColorStop(1,pal.b);
+    ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+    // Noise overlay circles
+    ctx.globalAlpha=0.08; ctx.fillStyle='#fff';
+    for(let i=0;i<8;i++){ctx.beginPath();ctx.arc(rand(0,W),rand(0,H),rand(50,250),0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=1;
+    // Badge
+    ctx.fillStyle='rgba(0,0,0,0.25)'; rr(ctx,40,40,350,55,27);
+    ctx.fillStyle='#fff'; ctx.font='bold 20px Arial'; ctx.textAlign='center';
+    ctx.fillText('TERJEMAHPEDIA',215,75);
+    ctx.textAlign='left';
+    // Judul
+    ctx.shadowColor='rgba(0,0,0,0.3)'; ctx.shadowBlur=20;
+    ctx.fillStyle='#fff'; ctx.font='bold 120px Arial';
+    ctx.fillText(diskon?diskon+'%':title.split(' ')[0],50,280);
+    ctx.font='bold 80px Arial'; ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.fillText(diskon?'DISKON':title.split(' ').slice(1).join(' ')||'TERJEMAH',50,370);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='28px Arial';
+    ctx.fillText(sub,50,415);
+    // Layanan grid
+    services.forEach((s,i)=>{
+      const x=50+(i%2)*510, y=470+Math.floor(i/2)*90;
+      ctx.fillStyle='rgba(0,0,0,0.2)'; rr(ctx,x,y,480,75,12);
+      ctx.fillStyle='#fff'; ctx.font='24px Arial'; ctx.textAlign='left';
+      ctx.fillText('→ '+s,x+20,y+45);
+    });
+    // Kontak
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,H-130,W,130);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='22px Arial'; ctx.textAlign='left';
+    ctx.fillText('WhatsApp / Hubungi Kami:',50,H-85);
+    ctx.fillStyle='#fff'; ctx.font='bold 50px Arial'; ctx.fillText(phone,50,H-30);
+  }
+
+  // =================== TEMPLATE 5: CORPORATE CLEAN ===================
+  else if(template===5){
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    // Sidebar biru gelap
+    ctx.fillStyle='#003366'; ctx.fillRect(0,0,320,H);
+    // Aksen oranye di sidebar
+    ctx.fillStyle='#FF6600'; ctx.fillRect(0,0,12,H);
+    // Logo area sidebar
+    ctx.fillStyle='rgba(255,255,255,0.1)'; rr(ctx,30,40,270,70,10);
+    ctx.fillStyle='#fff'; ctx.font='bold 18px Arial'; ctx.textAlign='center';
+    ctx.fillText('TERJEMAHPEDIA',165,82);
+    // Layanan di sidebar
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold 16px Arial'; ctx.textAlign='left';
+    ctx.fillText('LAYANAN KAMI',30,180);
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(30,190,260,2);
+    services.forEach((s,i)=>{
+      ctx.fillStyle='#FF6600'; ctx.fillRect(30,220+i*85,4,50);
+      ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.font='20px Arial';
+      wrapText(s,44,245+i*85,265,24);
+    });
+    // Kontak sidebar
+    ctx.fillStyle='#FF6600'; ctx.fillRect(20,H-150,280,2);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='18px Arial';
+    ctx.fillText('Hubungi Kami',30,H-120);
+    ctx.fillStyle='#fff'; ctx.font='bold 24px Arial'; ctx.fillText(phone,30,H-80);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='16px Arial';
+    ctx.fillText('Konsultasi Gratis!',30,H-50);
+    // Area konten kanan
+    ctx.fillStyle='#003366'; ctx.font='bold 20px Arial'; ctx.textAlign='left';
+    ctx.fillText('— PROFESIONAL & TERPERCAYA',360,80);
+    if(diskon){
+      ctx.fillStyle='#FF6600'; ctx.font='bold 120px Arial'; ctx.fillText(diskon+'%',360,280);
+      ctx.fillStyle='#003366'; ctx.font='bold 55px Arial'; ctx.fillText('DISKON SPESIAL',360,350);
+    } else {
+      ctx.fillStyle='#003366'; ctx.font='bold 95px Arial'; ctx.fillText('JASA',360,240);
+      ctx.fillStyle='#FF6600'; ctx.font='bold 95px Arial'; ctx.fillText('TERJEMAH',360,345);
+      ctx.fillStyle='#003366'; ctx.font='bold 50px Arial'; ctx.fillText('PROFESIONAL',360,405);
+    }
+    // Keunggulan
+    ctx.fillStyle='#eee'; ctx.fillRect(360,440,680,2);
+    const pros=['Penerjemah Bersertifikat','Hasil Akurat & Natural','Tepat Waktu','Harga Kompetitif'];
+    pros.forEach((p,i)=>{
+      const y=480+i*70;
+      ctx.fillStyle='#003366'; ctx.fillRect(360,y,4,45);
+      ctx.fillStyle='#222'; ctx.font='26px Arial'; ctx.fillText(p,378,y+32);
+    });
+    // Tagline bawah
+    ctx.fillStyle='#003366'; ctx.fillRect(360,H-60,680,2);
+    ctx.fillStyle='#555'; ctx.font='22px Arial';
+    ctx.fillText('Bahasa Bukan Penghalang, Kami Jembatannya.',360,H-25);
+  }
+
+  // =================== TEMPLATE 6: NEON BOLD ===================
+  else if(template===6){
+    ctx.fillStyle='#050510'; ctx.fillRect(0,0,W,H);
+    // Neon lines
+    const neonColors=['#00F5FF','#FF00FF','#FFFF00'];
+    const nc=neonColors[rand(0,neonColors.length-1)];
+    ctx.strokeStyle=nc; ctx.lineWidth=3; ctx.globalAlpha=0.4;
+    ctx.strokeRect(30,30,W-60,H-60);
+    ctx.globalAlpha=0.15; ctx.strokeRect(50,50,W-100,H-100);
+    ctx.globalAlpha=1;
+    // Badge
+    ctx.fillStyle=nc; ctx.font='bold 18px Arial'; ctx.textAlign='center';
+    ctx.fillText('✦ TERJEMAHPEDIA ✦',W/2,70);
+    ctx.fillStyle=nc; ctx.fillRect(W/2-200,80,400,2);
+    // Judul neon
+    ctx.textAlign='center';
+    ctx.fillStyle='#fff'; ctx.font='bold 110px Arial';
+    ctx.fillText(diskon?diskon+'%':title.split(' ')[0],W/2,270);
+    ctx.fillStyle=nc; ctx.font='bold 80px Arial';
+    ctx.fillText(diskon?'DISKON SPESIAL':title.split(' ').slice(1).join(' ')||'TERJEMAH',W/2,365);
+    ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.font='28px Arial';
+    ctx.fillText(sub,W/2,415);
+    // Divider
+    ctx.fillStyle=nc; ctx.fillRect(200,435,680,2);
+    // Layanan
+    services.forEach((s,i)=>{
+      const x=80+(i%2)*520, y=465+Math.floor(i/2)*90;
+      ctx.strokeStyle=nc; ctx.lineWidth=1; ctx.globalAlpha=0.3;
+      ctx.strokeRect(x,y,470,72); ctx.globalAlpha=1;
+      ctx.fillStyle=nc; ctx.font='bold 20px Arial'; ctx.textAlign='left';
+      ctx.fillText('▶',x+15,y+44);
+      ctx.fillStyle='#fff'; ctx.font='22px Arial'; ctx.fillText(s,x+45,y+44);
+    });
+    // Footer
+    ctx.fillStyle=nc; ctx.fillRect(0,H-100,W,2);
+    ctx.fillStyle='#fff'; ctx.font='bold 44px Arial'; ctx.textAlign='center';
+    ctx.fillText(phone,W/2,H-42);
+  }
+
+  // =================== TEMPLATE 7: INFOGRAPHIC STYLE ===================
+  else if(template===7){
+    ctx.fillStyle='#F4F6F9'; ctx.fillRect(0,0,W,H);
+    // Header band
+    ctx.fillStyle='#2C3E50'; ctx.fillRect(0,0,W,180);
+    ctx.fillStyle='#E74C3C'; ctx.fillRect(0,170,W,12);
+    // Header text
+    ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.font='bold 120px Arial';
+    ctx.textAlign='left'; ctx.fillText('T',900,165);
+    ctx.fillStyle='#fff'; ctx.font='bold 28px Arial';
+    ctx.fillText('TERJEMAHPEDIA',50,80);
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='22px Arial';
+    ctx.fillText('Jasa Terjemah Profesional & Terpercaya',50,120);
+    if(diskon){
+      ctx.fillStyle='#E74C3C'; ctx.font='bold 48px Arial';
+      ctx.fillText(`DISKON ${diskon}% — PENAWARAN TERBATAS!`,50,158);
+    }
+    // Konten utama
+    const cardColors=['#3498DB','#27AE60','#9B59B6','#E67E22'];
+    services.forEach((s,i)=>{
+      const x=50+(i%2)*510, y=220+Math.floor(i/2)*200;
+      ctx.fillStyle=cardColors[i]; ctx.fillRect(x,y,70,70);
+      ctx.fillStyle='#fff'; ctx.font='bold 36px Arial'; ctx.textAlign='center';
+      ctx.fillText((i+1).toString(),x+35,y+47);
+      ctx.fillStyle='#2C3E50'; ctx.font='bold 22px Arial'; ctx.textAlign='left';
+      ctx.fillText(s,x+90,y+30);
+      ctx.fillStyle=cardColors[i]; ctx.fillRect(x+90,y+38,360,3);
+      ctx.fillStyle='#666'; ctx.font='18px Arial';
+      ctx.fillText('Layanan berkualitas tinggi',x+90,y+62);
+    });
+    // Stats
+    ctx.fillStyle='#2C3E50'; ctx.fillRect(0,720,W,2);
+    const stats=[['1000+','Klien Puas'],['50+','Bahasa'],['24/7','Siap Melayani'],['100%','Akurat']];
+    stats.forEach((s,i)=>{
+      const x=50+i*255;
+      ctx.fillStyle='#E74C3C'; ctx.font='bold 44px Arial'; ctx.textAlign='center';
+      ctx.fillText(s[0],x+90,800);
+      ctx.fillStyle='#666'; ctx.font='18px Arial'; ctx.fillText(s[1],x+90,830);
+    });
+    // Footer
+    ctx.fillStyle='#2C3E50'; ctx.fillRect(0,H-110,W,110);
+    ctx.fillStyle='#E74C3C'; ctx.fillRect(0,H-110,12,110);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='20px Arial'; ctx.textAlign='left';
+    ctx.fillText('Hubungi Kami Sekarang',50,H-75);
+    ctx.fillStyle='#fff'; ctx.font='bold 44px Arial'; ctx.fillText(phone,50,H-28);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='20px Arial'; ctx.textAlign='right';
+    ctx.fillText('Konsultasi Gratis!',W-50,H-28);
+  }
+
   return canvas.toDataURL('image/jpeg',0.95);
 }
+
+
 
 // ===================== GENERATE REELS VIDEO =====================
 async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3) {
@@ -817,34 +1128,37 @@ async function genReelsVideo(cmd, slideCount, themeKey, secPerSlide=3) {
   const fps=30;
   const totalFrames=slides.length*secPerSlide*fps;
 
-  // === MUSIK dari file upload user ===
+  // === MUSIK dari playlist ===
   let audioStream = null;
   let audioCtx = null;
   try {
-    const musicData = await getMusicFromDB('main');
-    if(musicData) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioCtx.decodeAudioData(musicData.slice(0));
-      const dest = audioCtx.createMediaStreamDestination();
-      audioStream = dest.stream;
-      const totalDuration = slides.length * secPerSlide;
-      const gainNode = audioCtx.createGain();
-      gainNode.connect(dest);
-      let offset = 0;
-      const startT = audioCtx.currentTime + 0.1;
-      while(offset < totalDuration + 2) {
-        const src = audioCtx.createBufferSource();
-        src.buffer = audioBuffer;
-        src.connect(gainNode);
-        src.start(startT + offset);
-        offset += audioBuffer.duration;
+    const musicId = selectedMusicId;
+    if(musicId) {
+      const musicData = await getMusicFromDB(musicId);
+      if(musicData) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioCtx.decodeAudioData(musicData.slice(0));
+        const dest = audioCtx.createMediaStreamDestination();
+        audioStream = dest.stream;
+        const totalDuration = slides.length * secPerSlide;
+        const gainNode = audioCtx.createGain();
+        gainNode.connect(dest);
+        let offset = 0;
+        const startT = audioCtx.currentTime + 0.1;
+        while(offset < totalDuration + 2) {
+          const src = audioCtx.createBufferSource();
+          src.buffer = audioBuffer;
+          src.connect(gainNode);
+          src.start(startT + offset);
+          offset += audioBuffer.duration;
+        }
+        gainNode.gain.setValueAtTime(0, startT);
+        gainNode.gain.linearRampToValueAtTime(0.5, startT + 0.5);
+        gainNode.gain.setValueAtTime(0.5, startT + totalDuration - 0.8);
+        gainNode.gain.linearRampToValueAtTime(0, startT + totalDuration);
       }
-      gainNode.gain.setValueAtTime(0, startT);
-      gainNode.gain.linearRampToValueAtTime(0.5, startT + 0.5);
-      gainNode.gain.setValueAtTime(0.5, startT + totalDuration - 0.8);
-      gainNode.gain.linearRampToValueAtTime(0, startT + totalDuration);
     }
-  } catch(e) { audioStream = null; if(audioCtx){audioCtx.close();audioCtx=null;} }
+  } catch(e) { audioStream=null; if(audioCtx){audioCtx.close();audioCtx=null;} }
 
   // Pilih format terbaik
   const mimeTypes = ['video/mp4;codecs=h264','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
@@ -1005,55 +1319,145 @@ async function testCloudinary() {
   }
 }
 
-// ===================== MUSIK INDEXEDDB =====================
+// ===================== MUSIK PLAYLIST =====================
+let selectedMusicId = null;
+
 function openMusicDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('ap_music_db', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('music');
+    const req = indexedDB.open('ap_music_db', 2);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains('music')) db.createObjectStore('music');
+      if(!db.objectStoreNames.contains('playlist')) db.createObjectStore('playlist', {keyPath:'id'});
+    };
     req.onsuccess = e => resolve(e.target.result);
     req.onerror = reject;
   });
 }
 
-async function saveMusicToDB(mood, arrayBuffer) {
+async function getAllPlaylist() {
   const db = await openMusicDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction('music', 'readwrite');
-    tx.objectStore('music').put(arrayBuffer, mood);
-    tx.oncomplete = resolve;
-    tx.onerror = reject;
-  });
-}
-
-async function getMusicFromDB(mood) {
-  const db = await openMusicDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('music', 'readonly');
-    const req = tx.objectStore('music').get(mood);
-    req.onsuccess = e => resolve(e.target.result || null);
+    const tx = db.transaction('playlist','readonly');
+    const req = tx.objectStore('playlist').getAll();
+    req.onsuccess = e => resolve(e.target.result||[]);
     req.onerror = reject;
   });
 }
 
-async function loadMusic(mood, input) {
-  if(!mood || mood==='none') return;
-  const file = input.files[0];
-  if(!file) return;
-  const uploadBtn = document.getElementById('music-upload-btn');
-  const status = document.getElementById('music-upload-status');
-  if(uploadBtn) uploadBtn.innerHTML = '<span class="spinner"></span> Loading...';
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const testCtx = new (window.AudioContext || window.webkitAudioContext)();
-    await testCtx.decodeAudioData(arrayBuffer.slice(0));
-    testCtx.close();
-    await saveMusicToDB(mood, arrayBuffer);
-    updateMusicUploadUI();
-  } catch(e) {
-    if(status) status.innerHTML = `<span style="color:#E24B4A">❌ File tidak valid — pastikan format MP3</span>`;
-    if(uploadBtn) uploadBtn.textContent = '📂 Upload MP3';
-  }
+async function addToPlaylist(id, name, arrayBuffer) {
+  const db = await openMusicDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['playlist','music'],'readwrite');
+    tx.objectStore('playlist').put({id, name});
+    tx.objectStore('music').put(arrayBuffer, id);
+    tx.oncomplete = resolve; tx.onerror = reject;
+  });
 }
+
+async function removeFromPlaylist(id) {
+  const db = await openMusicDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['playlist','music'],'readwrite');
+    tx.objectStore('playlist').delete(id);
+    tx.objectStore('music').delete(id);
+    tx.oncomplete = resolve; tx.onerror = reject;
+  });
+}
+
+async function getMusicFromDB(id) {
+  const db = await openMusicDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('music','readonly');
+    const req = tx.objectStore('music').get(id);
+    req.onsuccess = e => resolve(e.target.result||null);
+    req.onerror = reject;
+  });
+}
+
+async function saveMusicToDB(id, arrayBuffer) {
+  const db = await openMusicDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('music','readwrite');
+    tx.objectStore('music').put(arrayBuffer, id);
+    tx.oncomplete = resolve; tx.onerror = reject;
+  });
+}
+
+async function renderPlaylist() {
+  const list = await getAllPlaylist().catch(()=>[]);
+  const container = document.getElementById('music-playlist');
+  const empty = document.getElementById('music-empty');
+  if(!container) return;
+
+  // Hapus item lama
+  container.querySelectorAll('.music-item').forEach(el=>el.remove());
+
+  if(!list.length) {
+    if(empty) empty.style.display='block';
+    selectedMusicId = null;
+    return;
+  }
+  if(empty) empty.style.display='none';
+
+  // Kalau selectedMusicId tidak ada di list, pilih yang pertama
+  if(!list.find(m=>m.id===selectedMusicId)) {
+    selectedMusicId = list[0].id;
+  }
+
+  list.forEach(music => {
+    const item = document.createElement('div');
+    item.className = 'music-item' + (music.id===selectedMusicId?' active':'');
+    item.dataset.id = music.id;
+    item.innerHTML = `
+      <span class="music-icon">🎵</span>
+      <span class="music-name">${music.name}</span>
+      <button class="music-del" onclick="event.stopPropagation();deleteMusicItem('${music.id}')" title="Hapus">✕</button>
+    `;
+    item.addEventListener('click', () => selectMusic(music.id));
+    container.appendChild(item);
+  });
+}
+
+function selectMusic(id) {
+  selectedMusicId = id;
+  document.querySelectorAll('.music-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+}
+
+async function deleteMusicItem(id) {
+  await removeFromPlaylist(id).catch(()=>{});
+  if(selectedMusicId === id) selectedMusicId = null;
+  renderPlaylist();
+}
+
+async function addMusicToPlaylist(input) {
+  const files = Array.from(input.files);
+  for(const file of files) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const testCtx = new (window.AudioContext || window.webkitAudioContext)();
+      await testCtx.decodeAudioData(arrayBuffer.slice(0));
+      testCtx.close();
+      const id = 'music_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+      const name = file.name.replace(/\.[^.]+$/,''); // Hapus ekstensi
+      await addToPlaylist(id, name, arrayBuffer);
+    } catch(e) { console.log('Skip file invalid:', file.name); }
+  }
+  input.value = '';
+  renderPlaylist();
+}
+
+function updateMusicUploadUI() { renderPlaylist(); }
+function checkMusicSimple() { renderPlaylist(); }
+async function checkMusicStatus() {}
+async function loadMusicSimple() {}
+async function removeMusicSimple() {}
+async function removeMusic() {}
+async function loadMusic() {}
+
+
 
 async function loadMusicSimple(input) {
   const file = input.files[0];
