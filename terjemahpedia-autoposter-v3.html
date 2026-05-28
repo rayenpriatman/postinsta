@@ -1213,20 +1213,22 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     :[['🎯','AKURAT & BERKUALITAS','Hasil tepat & sesuai konteks'],['⏱','CEPAT & TEPAT','Selesai sesuai deadline'],['🛡','AMAN & TERPERCAYA','Kerahasiaan terjamin'],['🌐','50+ BAHASA TERSEDIA','Inggris, Arab, Mandarin & lainnya']];
 
   const FY=H-88;
-  // Pastikan seluruh canvas sudah di-fill t.bg sebelum gambar foto
-  // Ini mencegah area transparan PNG jadi hitam
+  // Fill seluruh canvas dengan t.bg SEBELUM apapun — cegah hitam pada PNG transparan
+  ctx.fillStyle=t.bg; ctx.fillRect(0,0,W,H);
+
   const pf=(px,py,pw,ph,align='right')=>{
     const ir=photoImg.width/photoImg.height;let dh=ph,dw=dh*ir;
     if(dw>pw){dw=pw;dh=dw/ir;}if(dh>ph){dh=ph;dw=dh*ir;}
     const dx=align==='right'?px+pw-dw:align==='left'?px:px+(pw-dw)/2;
     const dy=py+ph-dh;
-    // Fill SELURUH canvas dengan t.bg dulu (bukan hanya area foto)
-    ctx.fillStyle=t.bg;ctx.fillRect(0,0,W,H);
     ctx.drawImage(photoImg,dx,dy,dw,dh);
     return {dx,dy,dw,dh};
   };
 
-  FR(0,0,W,H,t.bg);applyDec();
+  FR(0,0,W,H,t.bg);
+  // Fill lagi setelah dekorasi untuk pastikan tidak ada hitam
+  ctx.fillStyle=t.bg; ctx.fillRect(0,0,W,H);
+  applyDec();
 
   // ═══════════════════════════════════════════════════
   // 20 DESAIN
@@ -1893,12 +1895,10 @@ async function loadFeedAsset(type, input) {
   const reader = new FileReader();
   reader.onload = async (e) => {
     const original = e.target.result;
-    // Kompres gambar sebelum simpan ke localStorage
     try {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        // Max 800x800 untuk hemat localStorage
         const maxSize = 800;
         let w = img.width, h = img.height;
         if(w > maxSize || h > maxSize) {
@@ -1907,11 +1907,20 @@ async function loadFeedAsset(type, input) {
         }
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
+        // PENTING: jangan fill background putih — biarkan transparan
+        // Simpan sebagai PNG bukan JPEG agar transparency terjaga
+        ctx.clearRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        // Simpan sebagai PNG untuk jaga transparansi
+        const dataUrl = canvas.toDataURL('image/png');
         try { localStorage.setItem('ap_feed_'+type, dataUrl); } catch(e) {
-          // Kalau masih penuh, coba kualitas lebih rendah
-          try { localStorage.setItem('ap_feed_'+type, canvas.toDataURL('image/jpeg', 0.6)); } catch(e2) {}
+          // Kalau penuh, kompres lebih kecil
+          const c2 = document.createElement('canvas');
+          const s2 = 500; let w2=w,h2=h;
+          if(w2>s2||h2>s2){if(w2>h2){h2=Math.round(h2*s2/w2);w2=s2;}else{w2=Math.round(w2*s2/h2);h2=s2;}}
+          c2.width=w2;c2.height=h2;
+          c2.getContext('2d').drawImage(img,0,0,w2,h2);
+          try { localStorage.setItem('ap_feed_'+type, c2.toDataURL('image/png')); } catch(e2) {}
         }
         feedAssets[type] = dataUrl;
         updateAssetPreview(type, dataUrl);
