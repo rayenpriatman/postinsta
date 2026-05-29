@@ -505,6 +505,11 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
           <button class="btn" style="padding:9px;" onclick="toggleXKey('s-x-access-secret')">👁️</button>
         </div>
       </div>
+      <div class="field">
+        <label>X Proxy URL</label>
+        <input type="text" id="s-x-proxy" placeholder="https://x-proxy.namamu.workers.dev/">
+        <p class="hint">URL Cloudflare Worker proxy untuk bypass CORS. Sama seperti Threads proxy.</p>
+      </div>
     </div>
     <p class="hint" style="margin-bottom:12px;">Dari <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank">developer.twitter.com</a> → Keys & Tokens → OAuth 1.0 Keys. Pastikan permission <strong>Read and Write</strong>.</p>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -609,7 +614,7 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-threads-id','s-threads-token','s-threads-proxy','s-x-api-key','s-x-api-secret','s-x-access-token','s-x-access-secret','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-threads-id','s-threads-token','s-threads-proxy','s-x-api-key','s-x-api-secret','s-x-access-token','s-x-access-secret','s-x-proxy','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
@@ -2685,7 +2690,7 @@ async function manualPostThreads() {
 function toggleXKey(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
 
 function saveXSettings(){
-  ['s-x-api-key','s-x-api-secret','s-x-access-token','s-x-access-secret'].forEach(id=>{
+  ['s-x-api-key','s-x-api-secret','s-x-access-token','s-x-access-secret','s-x-proxy'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim(); if(v) localStorage.setItem('ap_'+id,v);
   });
@@ -2764,15 +2769,15 @@ async function buildOAuthHeader(method, url, extraParams={}) {
 
 async function postToX(text, imageUrl=null, dryRun=false) {
   const apiKey = localStorage.getItem('ap_s-x-api-key')||'';
+  const proxyUrl = (localStorage.getItem('ap_s-x-proxy')||'https://x-proxy.priatmanr.workers.dev').replace(/\/$/,'');
   if(!apiKey) throw new Error('Isi X API Keys di Pengaturan terlebih dahulu');
-  if(dryRun) return true; // just check keys exist
+  if(dryRun) return true;
 
   let mediaId = null;
 
   // Upload gambar jika ada
   if(imageUrl) {
     try {
-      // Fetch image as blob
       const imgResp = await fetch(imageUrl);
       const imgBlob = await imgResp.blob();
       const imgBase64 = await new Promise(res=>{
@@ -2780,13 +2785,13 @@ async function postToX(text, imageUrl=null, dryRun=false) {
       });
 
       const uploadUrl = 'https://upload.twitter.com/1.1/media/upload.json';
-      const uploadParams = { media_data: imgBase64 };
+      const proxyUploadUrl = proxyUrl.replace('api.twitter.com','upload.twitter.com') + '/1.1/media/upload.json';
       const oauthHeader = await buildOAuthHeader('POST', uploadUrl);
 
       const fd = new FormData();
       fd.append('media_data', imgBase64);
 
-      const uploadResp = await fetch(uploadUrl, {
+      const uploadResp = await fetch(proxyUploadUrl, {
         method:'POST',
         headers:{'Authorization': oauthHeader},
         body: fd
@@ -2798,13 +2803,14 @@ async function postToX(text, imageUrl=null, dryRun=false) {
     }
   }
 
-  // Post tweet
+  // Post tweet via proxy
   const tweetUrl = 'https://api.twitter.com/2/tweets';
+  const proxyTweetUrl = proxyUrl + '/2/tweets';
   const body = { text: text.substring(0, 280) };
   if(mediaId) body.media = { media_ids: [mediaId] };
 
   const oauthHeader = await buildOAuthHeader('POST', tweetUrl);
-  const resp = await fetch(tweetUrl, {
+  const resp = await fetch(proxyTweetUrl, {
     method:'POST',
     headers:{'Authorization': oauthHeader, 'Content-Type':'application/json'},
     body: JSON.stringify(body)
@@ -2818,7 +2824,7 @@ async function postToX(text, imageUrl=null, dryRun=false) {
 }
 
 function saveSettings(){
-  ['s-token','s-igid','s-threads-id','s-threads-token','s-threads-proxy','s-x-api-key','s-x-api-secret','s-x-access-token','s-x-access-secret','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-threads-id','s-threads-token','s-threads-proxy','s-x-api-key','s-x-api-secret','s-x-access-token','s-x-access-secret','s-x-proxy','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
