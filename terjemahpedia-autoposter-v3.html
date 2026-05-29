@@ -119,53 +119,161 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
 
 <!-- ===================== TAB FEED ===================== -->
 <div id="tab-feed" class="section active">
-  <div class="card card-primary">
-    <div class="card-title">✍️ Buat Konten Feed</div>
+
+  <!-- MODE SELECTOR -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <button class="btn" id="mode-generate-btn" onclick="switchMode('generate')" style="flex:1;justify-content:center;background:#1B6B3A;color:#fff;font-size:12px;padding:9px;">🎨 Generate</button>
+    <button class="btn" id="mode-upload-btn" onclick="switchMode('upload')" style="flex:1;justify-content:center;background:#f0f0f0;color:#555;font-size:12px;padding:9px;">📁 Upload File</button>
+  </div>
+
+  <!-- ── MODE: GENERATE POSTER ── -->
+  <div id="mode-generate" class="card card-primary">
+    <div class="card-title">🎨 Generate Poster Otomatis</div>
     <div class="field">
       <label>Perintah konten</label>
       <input type="text" id="feed-cmd" placeholder="buat poster terjemahpedia jasa terjemah no kontak 082323963884" onkeydown="if(event.key==='Enter')runFeed()">
     </div>
-
-    <!-- Upload foto & logo -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-      <!-- Foto model -->
       <div>
-        <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-photo-input').click()" id="photo-drop">
+        <div style="border:1.5px dashed #ddd;border-radius:10px;padding:10px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-photo-input').click()" id="photo-drop">
           <input type="file" id="feed-photo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('photo',this)">
-          <div id="photo-preview" style="width:100%;height:110px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
-            <div style="text-align:center;color:#aaa;">
-              <div style="font-size:28px;">👤</div>
-              <div style="font-size:12px;margin-top:4px;">Upload Foto Model</div>
-            </div>
+          <div id="photo-preview" style="width:100%;height:90px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
+            <div style="text-align:center;color:#aaa;"><div style="font-size:24px;">👤</div><div style="font-size:11px;margin-top:3px;">Foto Model (PNG)</div></div>
           </div>
-          <div id="photo-status" style="font-size:11px;color:#888;margin-top:5px;"></div>
+          <div id="photo-status" style="font-size:11px;color:#888;margin-top:4px;"></div>
         </div>
-        </div>
-      <!-- Logo -->
+      </div>
       <div>
-        <div style="border:1.5px dashed #ddd;border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-logo-input').click()" id="logo-drop">
+        <div style="border:1.5px dashed #ddd;border-radius:10px;padding:10px;text-align:center;cursor:pointer;" onclick="document.getElementById('feed-logo-input').click()" id="logo-drop">
           <input type="file" id="feed-logo-input" accept="image/*" style="display:none;" onchange="loadFeedAsset('logo',this)">
-          <div id="logo-preview" style="width:100%;height:110px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
-            <div style="text-align:center;color:#aaa;">
-              <div style="font-size:28px;">🔲</div>
-              <div style="font-size:12px;margin-top:4px;">Upload Logo</div>
-            </div>
+          <div id="logo-preview" style="width:100%;height:90px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;background:#f5f5f5;">
+            <div style="text-align:center;color:#aaa;"><div style="font-size:24px;">🔲</div><div style="font-size:11px;margin-top:3px;">Logo (PNG)</div></div>
           </div>
-          <div id="logo-status" style="font-size:11px;color:#888;margin-top:5px;"></div>
+          <div id="logo-status" style="font-size:11px;color:#888;margin-top:4px;"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center;">PNG transparan lebih bagus</div>
       </div>
     </div>
-        <p style="font-size:11px;color:#aaa;margin-bottom:14px;">📸 Foto & logo tersimpan di browser — tidak perlu upload ulang setiap kali</p>
-    <button class="btn btn-ig btn-full" onclick="runFeed()" id="feed-btn">🚀 Generate & Post ke Feed</button>
+    <p style="font-size:11px;color:#aaa;margin-bottom:10px;">📸 Foto & logo tersimpan di browser</p>
+    <div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:#333;">📤 Posting ke:</div>
+      <div style="display:flex;gap:14px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;"><input type="checkbox" id="post-to-ig" checked style="accent-color:#E4405F;">📸 Instagram</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;"><input type="checkbox" id="post-to-threads" style="accent-color:#000;">🧵 Threads</label>
+      </div>
+    </div>
+
+    <!-- Jadwal Otomatis -->
+    <div style="background:#f0fff4;border:1.5px solid #b2dfdb;border-radius:10px;padding:10px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;color:#1B6B3A;">⏰ Jadwal Otomatis</div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <span style="font-size:12px;color:#555;" id="sched-toggle-label">Nonaktif</span>
+          <div onclick="toggleSchedule()" id="sched-toggle" style="width:44px;height:24px;border-radius:12px;background:#ccc;cursor:pointer;position:relative;transition:.3s;">
+            <div id="sched-knob" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+          </div>
+        </label>
+      </div>
+      <div id="sched-options">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:#555;">Posting</span>
+          <select id="sched-count" style="padding:4px 8px;border:1.5px solid #b2dfdb;border-radius:8px;font-size:13px;background:#fff;">
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="3" selected>3x</option>
+            <option value="4">4x</option>
+            <option value="5">5x</option>
+          </select>
+          <span style="font-size:12px;color:#555;">sehari, antara</span>
+          <input type="time" id="sched-start-time" value="07:00" style="padding:4px 8px;border:1.5px solid #b2dfdb;border-radius:8px;font-size:13px;background:#fff;">
+          <span style="font-size:12px;color:#555;">—</span>
+          <input type="time" id="sched-end-time" value="21:00" style="padding:4px 8px;border:1.5px solid #b2dfdb;border-radius:8px;font-size:13px;background:#fff;">
+        </div>
+        <div id="sched-times-mini" style="font-size:12px;color:#1B6B3A;line-height:1.8;"></div>
+        <div id="sched-status-mini" style="font-size:12px;margin-top:4px;"></div>
+        <div id="sched-log-mini" style="font-size:11px;color:#555;max-height:80px;overflow-y:auto;margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-ig btn-full" onclick="runFeed()" id="feed-btn">🚀 Generate & Post</button>
   </div>
+
+  <!-- ── MODE: UPLOAD FILE ── -->
+  <div id="mode-upload" class="card card-primary" style="display:none;">
+    <div class="card-title">📁 Upload & Post Gambar</div>
+    <div style="border:2px dashed #1B6B3A;border-radius:12px;padding:16px;text-align:center;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById('local-file-input').click()">
+      <input type="file" id="local-file-input" accept="image/*" style="display:none;" onchange="loadLocalFile(this)">
+      <div id="local-preview" style="width:100%;min-height:100px;display:flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;">
+        <div style="text-align:center;color:#aaa;"><div style="font-size:36px;">🖼️</div><div style="font-size:13px;margin-top:4px;color:#1B6B3A;font-weight:600;">Klik untuk upload gambar</div><div style="font-size:11px;color:#aaa;">JPG, PNG, WebP</div></div>
+      </div>
+    </div>
+    <div class="field">
+      <label style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Caption</span>
+        <button class="btn" onclick="autoCaption()" id="auto-caption-btn" style="font-size:11px;padding:4px 10px;background:linear-gradient(135deg,#6C3483,#1A3E8C);color:#fff;">✨ Auto Caption AI</button>
+      </label>
+      <textarea id="local-caption" rows="4" placeholder="Tulis caption manual atau klik Auto Caption AI..." style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;resize:vertical;"></textarea>
+    </div>
+    <div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:#333;">📤 Posting ke:</div>
+      <div style="display:flex;gap:14px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;"><input type="checkbox" id="upload-to-ig" checked style="accent-color:#E4405F;">📸 Instagram</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;"><input type="checkbox" id="upload-to-threads" style="accent-color:#000;">🧵 Threads</label>
+      </div>
+    </div>
+    <button class="btn btn-ig btn-full" onclick="runUploadPost()" id="upload-post-btn">📤 Post Sekarang</button>
+    <div id="upload-status" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- ── MODE: JADWAL OTOMATIS ── -->
+  <div id="mode-schedule" class="card card-primary" style="display:none;">
+    <div class="card-title">⏰ Jadwal Posting Otomatis</div>
+    <div class="field">
+      <label>Perintah konten</label>
+      <input type="text" id="sched-cmd" placeholder="buat poster terjemahpedia jasa terjemah no kontak 082323963884">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="field" style="margin:0;">
+        <label>Berapa kali sehari</label>
+        <select id="sched-count" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;">
+          <option value="1">1x sehari</option>
+          <option value="2">2x sehari</option>
+          <option value="3" selected>3x sehari</option>
+          <option value="4">4x sehari</option>
+          <option value="5">5x sehari</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Rentang waktu</label>
+        <div style="background:#f0f7ff;border-radius:10px;padding:10px;font-size:13px;color:#1A3E8C;font-weight:600;text-align:center;border:1.5px solid #c8e0ff;height:42px;display:flex;align-items:center;justify-content:center;">08:00 — 21:00 🕐</div>
+      </div>
+    </div>
+    <div style="background:#f8f9fa;border-radius:10px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:#333;">📤 Posting ke:</div>
+      <div style="display:flex;gap:14px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;"><input type="checkbox" id="sched-to-ig" checked style="accent-color:#E4405F;">📸 Instagram</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;"><input type="checkbox" id="sched-to-threads" style="accent-color:#000;">🧵 Threads</label>
+      </div>
+    </div>
+    <div id="sched-preview" style="background:#f0fff4;border:1.5px solid #b2dfdb;border-radius:10px;padding:12px;margin-bottom:12px;display:none;">
+      <div style="font-size:13px;font-weight:600;color:#1B6B3A;margin-bottom:6px;">📅 Jadwal hari ini:</div>
+      <div id="sched-times" style="font-size:13px;color:#333;line-height:1.8;"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ig" onclick="startSchedule()" id="sched-start-btn" style="flex:1;justify-content:center;">▶️ Mulai Jadwal</button>
+      <button class="btn" onclick="stopSchedule()" id="sched-stop-btn" style="flex:1;justify-content:center;display:none;background:#f44336;color:#fff;">⏹️ Stop</button>
+    </div>
+    <div id="sched-status" style="margin-top:8px;font-size:12px;"></div>
+    <div id="sched-log" style="margin-top:8px;max-height:150px;overflow-y:auto;font-size:12px;color:#555;"></div>
+  </div>
+
 
   <div class="progress" id="feed-progress">
     <div style="font-size:14px;font-weight:700;margin-bottom:10px;">⚙️ Memproses...</div>
     <div class="step" id="fs-caption"><div class="step-dot" id="fd-caption">1</div><span id="ft-caption">Generate caption & hashtag</span></div>
     <div class="step" id="fs-poster"><div class="step-dot" id="fd-poster">2</div><span id="ft-poster">Buat poster</span></div>
     <div class="step" id="fs-upload"><div class="step-dot" id="fd-upload">3</div><span id="ft-upload">Upload gambar</span></div>
-    <div class="step" id="fs-post"><div class="step-dot" id="fd-post">4</div><span id="ft-post">Posting ke Feed Instagram</span></div>
+    <div class="step" id="fs-post"><div class="step-dot" id="fd-post">4</div><span id="ft-post">Posting ke Instagram</span></div>
+    <div class="step" id="fs-threads"><div class="step-dot" id="fd-threads">5</div><span id="ft-threads">Posting ke Threads</span></div>
   </div>
 
   <div class="result" id="feed-result">
@@ -338,6 +446,11 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
         <input type="text" id="s-igid" placeholder="17841415432256853">
         <p class="hint">17 digit dari Meta Business Suite</p>
       </div>
+      <div class="field">
+        <label>Threads User ID</label>
+        <input type="text" id="s-threads-id" placeholder="12345678901234">
+        <p class="hint">Dari <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Graph API Explorer</a> → ketik <code>me?fields=id</code> dengan token yang sama. Beda dengan Instagram ID.</p>
+      </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-dark" onclick="saveSettings()">💾 Simpan</button>
@@ -421,6 +534,7 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
   </div>
 </div>
 
+
 </div><!-- end layout -->
 
 <script>
@@ -439,7 +553,7 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-threads-id','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
@@ -468,10 +582,13 @@ async function runFeed() {
   resetSteps('f');
   feedCaption=''; feedImageUrl=''; feedPubUrl='';
 
+  const postIG_on = document.getElementById('post-to-ig').checked;
+  const postThreads_on = document.getElementById('post-to-threads').checked;
+
   // Step 1: Caption
   setStep('fs-caption','fd-caption','ft-caption','active','⏳','Generating caption...');
   try{ feedCaption=await genCaption(cmd,'feed'); setStep('fs-caption','fd-caption','ft-caption','done','✓','Caption selesai'); }
-  catch(e){ setStep('fs-caption','fd-caption','ft-caption','err','✗','Gagal: '+e.message); resetBtn('feed-btn','🚀 Generate & Post ke Feed'); return; }
+  catch(e){ setStep('fs-caption','fd-caption','ft-caption','err','✗','Gagal: '+e.message); resetBtn('feed-btn','🚀 Generate & Post'); return; }
 
   // Step 2: Poster
   setStep('fs-poster','fd-poster','ft-poster','active','⏳','Membuat poster...');
@@ -480,34 +597,63 @@ async function runFeed() {
 
   showFeedResult();
 
-  // Step 3 & 4: Upload + Post
-  if(token && igId && feedImageUrl) {
+  // Step 3: Upload gambar (kalau ada Instagram atau Threads dengan foto)
+  if(feedImageUrl && (postIG_on || postThreads_on)) {
     setStep('fs-upload','fd-upload','ft-upload','active','⏳','Upload gambar...');
     try{
       feedPubUrl = await uploadImgBB(feedImageUrl);
-      // feedImageUrl tetap dataURL canvas untuk preview
       setStep('fs-upload','fd-upload','ft-upload','done','✓','Upload selesai');
-    }catch(e){ setStep('fs-upload','fd-upload','ft-upload','err','✗','Gagal upload: '+e.message); document.getElementById('feed-post-btn').style.display='inline-flex'; resetBtn('feed-btn','🚀 Generate & Post ke Feed'); return; }
+    }catch(e){
+      setStep('fs-upload','fd-upload','ft-upload','err','✗','Gagal upload: '+e.message);
+      document.getElementById('feed-post-btn').style.display='inline-flex';
+      resetBtn('feed-btn','🚀 Generate & Post'); return;
+    }
+  }
 
-    setStep('fs-post','fd-post','ft-post','active','⏳','Posting ke Feed...');
+  // Step 4: Post ke Instagram
+  if(postIG_on && token && igId) {
+    setStep('fs-post','fd-post','ft-post','active','⏳','Posting ke Instagram...');
     try{
       await postIG(token,igId,feedPubUrl,feedCaption,'photo');
-      setStep('fs-post','fd-post','ft-post','done','✓','Berhasil diposting ke Feed! 🎉');
-      document.getElementById('feed-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Feed Instagram!</div>';
+      setStep('fs-post','fd-post','ft-post','done','✓','✅ Instagram berhasil!');
       addHistory(cmd,feedImageUrl,'posted','feed');
     }catch(e){
-      setStep('fs-post','fd-post','ft-post','err','✗','Gagal: '+e.message);
-      document.getElementById('feed-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'</div>';
+      setStep('fs-post','fd-post','ft-post','err','✗','IG gagal: '+e.message);
       document.getElementById('feed-post-btn').style.display='inline-flex';
-      addHistory(cmd,feedImageUrl,'failed','feed');
     }
+  } else if(postIG_on) {
+    setStep('fs-post','fd-post','ft-post','err','!','Atur token Instagram di Pengaturan');
   } else {
-    setStep('fs-upload','fd-upload','ft-upload','err','!','Skip');
-    setStep('fs-post','fd-post','ft-post','err','!',token?'Atur token di Pengaturan':'Token belum diatur');
-    if(!token||!igId) document.getElementById('feed-status').innerHTML='<div class="status-box status-err">⚠️ Atur Access Token & Account ID di tab Pengaturan</div>';
-    document.getElementById('feed-post-btn').style.display=(token&&igId)?'inline-flex':'none';
+    setStep('fs-post','fd-post','ft-post','done','-','Skip Instagram');
   }
-  resetBtn('feed-btn','🚀 Generate & Post ke Feed');
+
+  // Step 5: Post ke Threads
+  const threadsId = localStorage.getItem('ap_s-threads-id');
+  if(postThreads_on && token && threadsId) {
+    setStep('fs-threads','fd-threads','ft-threads','active','⏳','Posting ke Threads...');
+    try{
+      // Generate teks Threads (lebih pendek dari IG)
+      let threadsText = feedCaption;
+      try { threadsText = await genCaption(cmd,'threads'); } catch(e) {}
+      await postToThreads(token, threadsId, threadsText, feedPubUrl||null);
+      setStep('fs-threads','fd-threads','ft-threads','done','✓','✅ Threads berhasil!');
+    }catch(e){
+      setStep('fs-threads','fd-threads','ft-threads','err','✗','Threads gagal: '+e.message);
+    }
+  } else if(postThreads_on) {
+    setStep('fs-threads','fd-threads','ft-threads','err','!','Atur Threads ID di Pengaturan');
+  } else {
+    setStep('fs-threads','fd-threads','ft-threads','done','-','Skip Threads');
+  }
+
+  // Status akhir
+  const igOk = postIG_on && token && igId;
+  const thrOk = postThreads_on && token && threadsId;
+  if(igOk || thrOk) {
+    document.getElementById('feed-status').innerHTML=`<div class="status-box status-ok">✅ Selesai diposting ke ${[postIG_on?'Instagram':'',postThreads_on?'Threads':''].filter(Boolean).join(' & ')}!</div>`;
+  }
+
+  resetBtn('feed-btn','🚀 Generate & Post');
 }
 
 function showFeedResult() {
@@ -646,6 +792,7 @@ async function genCaption(cmd, type) {
   if(anthropicKey) {
     try {
       const isVideo = type === 'reels';
+      const isThreads = type === 'threads';
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -658,7 +805,20 @@ async function genCaption(cmd, type) {
           max_tokens: 800,
           messages: [{
             role: 'user',
-            content: `Buat caption Instagram yang menarik dan engaging berdasarkan perintah ini: "${cmd}"
+            content: isThreads
+              ? `Buat teks Threads yang menarik dan engaging berdasarkan perintah ini: "${cmd}"
+
+Ketentuan:
+- Bahasa Indonesia yang natural, conversational dan relatable
+- 1-2 paragraf singkat (Threads lebih pendek dari Instagram)
+- Call to action yang kuat
+- 5-10 hashtag relevan di bagian akhir
+- Sertakan nomor kontak jika ada dalam perintah
+- Gunakan emoji secukupnya
+- Nada santai tapi profesional
+
+Langsung tulis teksnya saja tanpa label atau penjelasan.`
+              : `Buat caption Instagram yang menarik dan engaging berdasarkan perintah ini: "${cmd}"
 
 Ketentuan:
 - Bahasa Indonesia yang natural dan friendly
@@ -1170,8 +1330,10 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   };
   const fitTitle=(x,y,maxW,sz=112)=>{
     const l1=diskon?'PROMO':'JASA',l2=diskon?`DISKON ${diskon}%`:'TERJEMAH';
+    // Margin keamanan 30px
+    const safeW=maxW-30;
     let fs=sz;ctx.font=`bold ${fs}px Arial`;
-    while(fs>52&&(ctx.measureText(l1).width>maxW||ctx.measureText(l2).width>maxW)){fs-=4;ctx.font=`bold ${fs}px Arial`;}
+    while(fs>44&&(ctx.measureText(l1).width>safeW||ctx.measureText(l2).width>safeW)){fs-=2;ctx.font=`bold ${fs}px Arial`;}
     SH(true,t.dk?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.1)',6);
     TX(l1,x,y,fs,ttx);TX(l2,x,y+fs,fs,ttx2);SH(false);return fs;
   };
@@ -1208,13 +1370,18 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
   // ─────────────────────────────────────────────────────
 
   // Helper: taruh foto di atas semua elemen, di posisi kanan
-  const overlayPhoto=(photoX, photoMaxW, photoMaxH=FY)=>{
+  const overlayPhoto=(photoStartX, photoMaxW, photoMaxH=FY)=>{
     if(!photoImg) return;
     const ir=photoImg.width/photoImg.height;
+    // Ukuran foto: tinggi = photoMaxH, lebar proporsional
     let dh=photoMaxH, dw=dh*ir;
+    // Cap lebar maksimal
     if(dw>photoMaxW){dw=photoMaxW;dh=dw/ir;}
+    // Pastikan tidak melebihi canvas
+    if(dw>W){dw=W;dh=dw/ir;}
+    if(dh>photoMaxH){dh=photoMaxH;dw=dh*ir;}
     const dx=W-dw; // rata kanan
-    const dy=FY-dh; // rata bawah
+    const dy=Math.max(0,FY-dh); // rata bawah, tidak lebih dari 0
     ctx.drawImage(photoImg,dx,dy,dw,dh);
   };
 
@@ -1234,7 +1401,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     ctx.save();ctx.globalAlpha=.06;ctx.fillStyle=t.ac;CI(W,0,380,t.ac);ctx.restore();
 
     // FRAME: semua elemen teks & grafis
-    const TW=Math.round(W*0.52); // zona teks kiri
+    const TW=Math.round(W*0.48); // zona teks kiri — 48% agar tidak overlap foto
 
     // Header
     drawLogo(22,22,88);LN(124,26,2,t.ac+'55',78);
@@ -1264,7 +1431,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     drawFooter();
 
     // STEP 2: Foto di atas frame — rata kanan, selebar sisa ruang + sedikit overlap ke teks
-    overlayPhoto(W*0.44, W*0.60);
+    overlayPhoto(W*0.44, W*0.58);
   }
 
   // ══════════════════════════════
@@ -1349,7 +1516,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     ctx.save();ctx.globalAlpha=.07;ctx.strokeStyle='#C9A84C';ctx.lineWidth=2;
     CI(W*.84,H*.18,290,null,'#C9A84C',2);CI(W*.84,H*.18,228,null,'#C9A84C',1);ctx.restore();
 
-    const TW=Math.round(W*0.52);
+    const TW=Math.round(W*0.48);
 
     // Frame teks
     drawLogo(22,22,86);LN(120,26,2,'#C9A84C55',76);
@@ -1383,7 +1550,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     [['⚙️','PROFESIONAL'],['👍','BERKUALITAS'],['🔒','TERJAMIN']].forEach((b,i)=>{const bx=W-348+i*116;LN(bx,FY+6,1,'rgba(255,255,255,0.15)',76);CI(bx+54,FY+30,18,'rgba(255,255,255,0.1)');TX(b[0],bx+54,FY+36,15,'#fff','center',false);TX(b[1],bx+54,FY+58,11,'rgba(255,255,255,0.7)','center',false);});
 
     // STEP 2: Foto di atas frame
-    overlayPhoto(W*0.44, W*0.60);
+    overlayPhoto(W*0.44, W*0.58);
   }
 
   // ══════════════════════════════
@@ -1399,7 +1566,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     FR(0,0,W,10,t.ac);FR(0,10,8,FY-10,t.ac);
     FR(W-8,10,8,FY-10,t.ac+'66');
 
-    const TW=Math.round(W*0.53);
+    const TW=Math.round(W*0.49);
 
     // Frame
     drawLogo(22,24,84);LN(118,28,2,t.ac+'44',76);
@@ -1424,7 +1591,7 @@ async function drawProfessionalTemplate(ctx, {phone, diskon, isDoc, isMulti, pho
     drawFooter();
 
     // STEP 2: Foto di atas frame
-    overlayPhoto(W*0.45, W*0.58);
+    overlayPhoto(W*0.45, W*0.56);
   }
 }
 
@@ -1684,121 +1851,6 @@ async function testCloudinary() {
     s.innerHTML=`<span style="color:#E24B4A">❌ ${e.message}</span>`;
   }
 }
-
-// ===================== AI PHOTO GENERATOR (Stable Diffusion via HF) =====================
-async function generateAIPhoto() {
-  const btn = document.getElementById('ai-photo-btn');
-  const statusBox = document.getElementById('ai-gen-status');
-  const statusTxt = document.getElementById('ai-gen-text');
-  const hfKey = localStorage.getItem('ap_s-hf-key') || '';
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Generating...';
-  statusBox.style.display = 'block';
-  statusTxt.innerHTML = '🤖 Mengirim request ke Stable Diffusion... (30-60 detik)';
-
-  const prompts = [
-    'professional Indonesian woman, wearing elegant green blazer, holding documents folder, smiling confidently, standing, white clean office background, high quality photography, portrait, 8k',
-    'beautiful professional Asian woman translator, green business suit, holding papers, bright smile, modern office background, professional headshot, high quality, detailed',
-    'Indonesian professional woman, formal green blazer, holding clipboard documents, friendly smile, clean white background, business portrait photography, sharp focus',
-  ];
-  const prompt = prompts[Math.floor(Math.random() * prompts.length)];
-  const negPrompt = 'nsfw, nude, deformed, bad anatomy, blurry, low quality, cartoon, anime, drawing, text, watermark, ugly, multiple people';
-
-  // Coba beberapa model HF gratis
-  const models = [
-    'stabilityai/stable-diffusion-xl-base-1.0',
-    'runwayml/stable-diffusion-v1-5',
-    'stabilityai/stable-diffusion-2-1',
-  ];
-
-  let success = false;
-  for (const model of models) {
-    try {
-      statusTxt.innerHTML = `🤖 Mencoba model: ${model.split('/')[1]}... (harap tunggu)`;
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (hfKey) headers['Authorization'] = `Bearer ${hfKey}`;
-
-      const res = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            negative_prompt: negPrompt,
-            num_inference_steps: 25,
-            guidance_scale: 7.5,
-            width: 512,
-            height: 768,
-          }
-        })
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        // Model loading? Tunggu sebentar
-        if (err.error && err.error.includes('loading')) {
-          statusTxt.innerHTML = `⏳ Model sedang loading, tunggu 20 detik...`;
-          await new Promise(r => setTimeout(r, 20000));
-          // Retry
-          const res2 = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-            method: 'POST', headers,
-            body: JSON.stringify({ inputs: prompt, parameters: { negative_prompt: negPrompt, num_inference_steps: 20, width: 512, height: 768 } })
-          });
-          if (!res2.ok) continue;
-          const blob2 = await res2.blob();
-          if (blob2.type.startsWith('image/')) {
-            await saveAIPhoto(blob2);
-            success = true; break;
-          }
-        }
-        continue;
-      }
-
-      const blob = await res.blob();
-      if (blob.type.startsWith('image/')) {
-        await saveAIPhoto(blob);
-        success = true;
-        break;
-      }
-    } catch(e) {
-      console.log('Model failed:', model, e.message);
-      continue;
-    }
-  }
-
-  if (success) {
-    statusTxt.innerHTML = '✅ Foto AI berhasil di-generate dan disimpan!';
-    statusBox.style.background = '#eaf3de';
-    statusBox.style.borderColor = '#b2d89a';
-    statusBox.style.color = '#3b6d11';
-    setTimeout(() => { statusBox.style.display = 'none'; }, 4000);
-  } else {
-    statusTxt.innerHTML = '❌ Gagal generate. Coba lagi atau upload foto manual. <br><small>Tip: Daftar di <a href="https://huggingface.co" target="_blank">huggingface.co</a> → isi HF Token di Pengaturan untuk hasil lebih stabil.</small>';
-    statusBox.style.background = '#fcebeb';
-    statusBox.style.borderColor = '#f5b8b8';
-    statusBox.style.color = '#a32d2d';
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '🤖 Generate Foto AI (Gratis)';
-}
-
-async function saveAIPhoto(blob) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      try { localStorage.setItem('ap_feed_photo', dataUrl); } catch(e) {}
-      feedAssets.photo = dataUrl;
-      updateAssetPreview('photo', dataUrl);
-      resolve();
-    };
-    reader.readAsDataURL(blob);
-  });
-}
-
 
 const feedAssets = { photo: null, logo: null };
 
@@ -2214,8 +2266,327 @@ function renderHistory(){
 
 function clearHistory(){if(confirm('Hapus semua riwayat?')){historyItems=[];localStorage.removeItem('ap_hist_v3');renderHistory();}}
 
+const generateCaption = genCaption;
+
+// ===================== MODE SWITCHER =====================
+function switchMode(mode) {
+  ['generate','upload','schedule'].forEach(m => {
+    document.getElementById('mode-'+m).style.display = m===mode ? 'block' : 'none';
+    const btn = document.getElementById('mode-'+m+'-btn');
+    if(btn) { btn.style.background = m===mode ? '#1B6B3A' : '#f0f0f0'; btn.style.color = m===mode ? '#fff' : '#555'; }
+  });
+}
+
+// ===================== UPLOAD FILE LOKAL =====================
+let localFileData = null;
+
+function loadLocalFile(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    localFileData = e.target.result;
+    const prev = document.getElementById('local-preview');
+    prev.innerHTML = `<img src="${localFileData}" style="max-height:200px;max-width:100%;border-radius:8px;object-fit:contain;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function autoCaption() {
+  if(!localFileData) { alert('Upload gambar dulu!'); return; }
+  const btn = document.getElementById('auto-caption-btn');
+  btn.disabled = true; btn.innerHTML = '⏳ Generating...';
+  const ta = document.getElementById('local-caption');
+  try {
+    const anthropicKey = localStorage.getItem('ap_s-anthropic');
+    if(anthropicKey) {
+      // Pakai Anthropic Vision untuk baca gambar
+      const base64 = localFileData.split(',')[1];
+      const mediaType = localFileData.split(';')[0].split(':')[1];
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01'},
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+            {type:'text',text:`Buat caption Instagram yang menarik dan engaging untuk gambar ini.
+Ketentuan:
+- Bahasa Indonesia natural dan friendly
+- 2-3 paragraf pendek
+- Call to action yang kuat
+- 15-20 hashtag relevan
+- Gunakan emoji secukupnya
+- Fokus pada jasa terjemahan kalau relevan
+Langsung tulis captionnya saja.`}
+          ]}]
+        })
+      });
+      const data = await res.json();
+      if(!data.error) { ta.value = data.content.map(c=>c.text||'').join(''); }
+      else throw new Error(data.error.message);
+    } else {
+      // Fallback template
+      ta.value = `✨ Terjemahpedia — Solusi terjemahan profesional untuk semua kebutuhan Anda!\n\nKami melayani terjemahan dokumen, konten bisnis, dan berbagai kebutuhan bahasa dengan akurat, cepat, dan terpercaya.\n\n📞 Hubungi kami sekarang dan dapatkan penawaran terbaik!\n\n#terjemahpedia #jasaterjemah #terjemahan #translasi #jasaterjemahprofesional #terjemahmurah #terjemahcepat #jasatranslasi`;
+    }
+  } catch(e) {
+    ta.value = `✨ Terjemahpedia — Solusi terjemahan terpercaya!\n\n📞 Hubungi kami untuk info lengkap.\n\n#terjemahpedia #jasaterjemah #terjemahan`;
+    alert('Auto caption pakai template (isi Anthropic API key untuk hasil lebih bagus)');
+  }
+  btn.disabled = false; btn.innerHTML = '✨ Auto Caption AI';
+}
+
+async function runUploadPost() {
+  if(!localFileData) { alert('Upload gambar dulu!'); return; }
+  const caption = document.getElementById('local-caption').value.trim();
+  if(!caption) { alert('Isi caption dulu atau klik Auto Caption!'); return; }
+  const token = localStorage.getItem('ap_s-token');
+  const igId = localStorage.getItem('ap_s-igid');
+  const threadsId = localStorage.getItem('ap_s-threads-id');
+  const toIG = document.getElementById('upload-to-ig').checked;
+  const toThreads = document.getElementById('upload-to-threads').checked;
+  const btn = document.getElementById('upload-post-btn');
+  const status = document.getElementById('upload-status');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Memproses...';
+  status.innerHTML='<div class="status-box status-load">⏳ Upload & posting...</div>';
+  try {
+    // Upload gambar
+    const pubUrl = await uploadImgBB(localFileData);
+    let results = [];
+    // Post ke Instagram
+    if(toIG && token && igId) {
+      try { await postIG(token,igId,pubUrl,caption,'photo'); results.push('✅ Instagram'); }
+      catch(e) { results.push('❌ Instagram: '+e.message); }
+    }
+    // Post ke Threads
+    if(toThreads && token && threadsId) {
+      try { await postToThreads(token,threadsId,caption,pubUrl); results.push('✅ Threads'); }
+      catch(e) { results.push('❌ Threads: '+e.message); }
+    }
+    status.innerHTML=`<div class="status-box status-ok">${results.join('<br>')}</div>`;
+    addHistory('upload file',localFileData,'posted','feed');
+  } catch(e) {
+    status.innerHTML=`<div class="status-box status-err">❌ ${e.message}</div>`;
+  }
+  btn.disabled=false; btn.innerHTML='📤 Post Sekarang';
+}
+
+// ===================== JADWAL OTOMATIS (toggle) =====================
+let schedTimers=[], schedActive=false;
+
+function toggleSchedule(){
+  if(!schedActive) startSchedule();
+  else stopSchedule();
+}
+
+function genRandomTimes(count, startMins, endMins){
+  if(endMins<=startMins) endMins=startMins+60;
+  const slot=Math.floor((endMins-startMins)/count);
+  const times=[];
+  for(let i=0;i<count;i++){
+    const mn=startMins+i*slot;
+    const mx=Math.min(startMins+(i+1)*slot-10,endMins-5);
+    times.push(mn+Math.floor(Math.random()*Math.max(1,mx-mn)));
+  }
+  return times.sort((a,b)=>a-b);
+}
+function minsToTime(m){return`${Math.floor(m/60).toString().padStart(2,'0')}:${(m%60).toString().padStart(2,'0')}`;}
+
+function startSchedule(){
+  const cmd=document.getElementById('feed-cmd').value.trim();
+  if(!cmd){alert('Isi perintah konten dulu!');return;}
+  const count=parseInt(document.getElementById('sched-count').value);
+
+  // Baca jam mulai & selesai
+  const startVal=document.getElementById('sched-start-time').value||'07:00';
+  const endVal=document.getElementById('sched-end-time').value||'21:00';
+  const [sh,sm]=startVal.split(':').map(Number);
+  const [eh,em]=endVal.split(':').map(Number);
+  const startMins=sh*60+sm, endMins=eh*60+em;
+
+  if(endMins<=startMins){alert('Jam selesai harus lebih besar dari jam mulai!');return;}
+  if(endMins-startMins<30){alert('Rentang waktu minimal 30 menit!');return;}
+
+  const now=new Date(), nowMins=now.getHours()*60+now.getMinutes();
+  const times=genRandomTimes(count,startMins,endMins);
+  const future=times.filter(t=>t>nowMins);
+
+  // Update toggle UI
+  schedActive=true;
+  const tog=document.getElementById('sched-toggle');
+  const knob=document.getElementById('sched-knob');
+  const lbl=document.getElementById('sched-toggle-label');
+  if(tog){tog.style.background='#1B6B3A';knob.style.left='22px';lbl.textContent='Aktif';}
+  document.getElementById('sched-options').style.display='block';
+
+  // Tampilkan jadwal
+  const timesEl=document.getElementById('sched-times-mini');
+  if(timesEl) timesEl.innerHTML=times.map(t=>`<span style="margin-right:12px;${t<=nowMins?'color:#aaa':'color:#1B6B3A;font-weight:600'}">⏰ ${minsToTime(t)}${t<=nowMins?' ✓':''}</span>`).join('');
+
+  const statusEl=document.getElementById('sched-status-mini');
+  if(statusEl) statusEl.innerHTML=future.length>0
+    ?`<span style="color:#1B6B3A;">✅ ${future.length} posting dijadwalkan (${startVal}–${endVal})</span>`
+    :`<span style="color:#f44336;">Semua jadwal hari ini sudah lewat, reset besok</span>`;
+
+  schedTimers.forEach(t=>clearTimeout(t));schedTimers=[];
+
+  future.forEach(t=>{
+    const delay=(t-nowMins)*60*1000;
+    const timer=setTimeout(async()=>{
+      if(!schedActive)return;
+      const cmdNow=document.getElementById('feed-cmd').value.trim();
+      addSchedLog(`⏰ ${minsToTime(t)} — Posting...`);
+      try{
+        const toIG=document.getElementById('post-to-ig').checked;
+        const toTh=document.getElementById('post-to-threads').checked;
+        const token=localStorage.getItem('ap_s-token');
+        const igId=localStorage.getItem('ap_s-igid');
+        const threadsId=localStorage.getItem('ap_s-threads-id');
+        const cap=await genCaption(cmdNow,'feed');
+        const img=await genImage(cmdNow);
+        const pub=await uploadImgBB(img);
+        if(toIG&&token&&igId){await postIG(token,igId,pub,cap,'photo');addSchedLog(`✅ ${minsToTime(t)} Instagram oke`);}
+        if(toTh&&token&&threadsId){const tc=await genCaption(cmdNow,'threads').catch(()=>cap);await postToThreads(token,threadsId,tc,pub);addSchedLog(`✅ ${minsToTime(t)} Threads oke`);}
+        addHistory(cmdNow,img,'posted','schedule');
+      }catch(e){addSchedLog(`❌ ${minsToTime(t)} — ${e.message}`);}
+    },delay);
+    schedTimers.push(timer);
+  });
+
+  // Reset besok jam 00:01
+  const toMidnight=((24*60-nowMins)+1)*60*1000;
+  schedTimers.push(setTimeout(()=>{if(schedActive)startSchedule();},toMidnight));
+}
+
+function stopSchedule(){
+  schedActive=false;
+  schedTimers.forEach(t=>clearTimeout(t));schedTimers=[];
+  const tog=document.getElementById('sched-toggle');
+  const knob=document.getElementById('sched-knob');
+  const lbl=document.getElementById('sched-toggle-label');
+  if(tog){tog.style.background='#ccc';knob.style.left='2px';lbl.textContent='Nonaktif';}
+  const st=document.getElementById('sched-status-mini');
+  if(st)st.innerHTML='<span style="color:#f44336;">⏹️ Jadwal dihentikan</span>';
+  addSchedLog('⏹️ Jadwal dihentikan');
+}
+
+function addSchedLog(msg){
+  const log=document.getElementById('sched-log-mini');
+  if(!log)return;
+  const t=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  log.innerHTML=`<div>[${t}] ${msg}</div>`+log.innerHTML;
+}
+
+function startSchedule_old(){} // alias lama
+
+
+
+let threadsPhoto = null;
+
+function loadThreadsPhoto(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    threadsPhoto = e.target.result;
+    const prev = document.getElementById('threads-photo-preview');
+    prev.innerHTML = `<img src="${threadsPhoto}" style="max-height:90px;max-width:100%;border-radius:8px;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function postToThreads(token, threadsId, text, imageUrl=null) {
+  const BASE = 'https://graph.threads.net/v1.0';
+  // Step 1: Create container
+  const params = { text, access_token: token };
+  if(imageUrl) { params.media_type = 'IMAGE'; params.image_url = imageUrl; }
+  else { params.media_type = 'TEXT'; }
+  const r1 = await fetch(`${BASE}/${threadsId}/threads`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(params)
+  });
+  const d1 = await r1.json();
+  if(!d1.id) throw new Error(d1.error?.message || 'Gagal buat container');
+  // Step 2: Publish
+  const r2 = await fetch(`${BASE}/${threadsId}/threads_publish`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ creation_id: d1.id, access_token: token })
+  });
+  const d2 = await r2.json();
+  if(!d2.id) throw new Error(d2.error?.message || 'Gagal publish');
+  return d2.id;
+}
+
+async function runThreads() {
+  const cmd = document.getElementById('threads-cmd').value.trim();
+  if(!cmd){ alert('Isi teks konten dulu!'); return; }
+  const token = localStorage.getItem('ap_s-token');
+  const threadsId = localStorage.getItem('ap_s-threads-id');
+
+  setBtnLoad('threads-btn','⏳ Memproses...');
+  document.getElementById('threads-progress').style.display='block';
+  document.getElementById('threads-result').style.display='none';
+  document.getElementById('threads-status').innerHTML='';
+
+  // Step 1: Generate teks
+  setStep('ts-caption','td-caption','tt-caption','active','⏳','Generate teks...');
+  let text = '';
+  try {
+    text = await generateCaption(cmd, 'threads');
+    document.getElementById('threads-text-preview').innerText = text;
+    setStep('ts-caption','td-caption','tt-caption','done','✓','Teks selesai');
+  } catch(e) {
+    setStep('ts-caption','td-caption','tt-caption','err','✗','Gagal: '+e.message);
+    resetBtn('threads-btn','🧵 Generate & Post ke Threads'); return;
+  }
+
+  document.getElementById('threads-result').style.display='block';
+
+  // Step 2: Post ke Threads
+  if(token && threadsId) {
+    setStep('ts-post','td-post','tt-post','active','⏳','Posting ke Threads...');
+    try {
+      let imgUrl = null;
+      if(threadsPhoto) {
+        imgUrl = await uploadImgBB(threadsPhoto);
+      }
+      await postToThreads(token, threadsId, text, imgUrl);
+      setStep('ts-post','td-post','tt-post','done','✓','Berhasil diposting! 🎉');
+      document.getElementById('threads-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Threads!</div>';
+    } catch(e) {
+      setStep('ts-post','td-post','tt-post','err','✗','Gagal: '+e.message);
+      document.getElementById('threads-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'</div>';
+      document.getElementById('threads-post-btn').style.display='inline-flex';
+    }
+  } else {
+    setStep('ts-post','td-post','tt-post','err','!','Atur Threads ID di Pengaturan');
+    document.getElementById('threads-status').innerHTML='<div class="status-box status-err">⚠️ Atur Threads User ID di tab Pengaturan</div>';
+    document.getElementById('threads-post-btn').style.display='inline-flex';
+  }
+  resetBtn('threads-btn','🧵 Generate & Post ke Threads');
+}
+
+async function manualPostThreads() {
+  const token = localStorage.getItem('ap_s-token');
+  const threadsId = localStorage.getItem('ap_s-threads-id');
+  if(!token||!threadsId){ alert('Atur token & Threads ID di Pengaturan'); return; }
+  const btn = document.getElementById('threads-post-btn');
+  btn.disabled=true; btn.innerHTML='⏳ Posting...';
+  try {
+    let imgUrl = null;
+    if(threadsPhoto) imgUrl = await uploadImgBB(threadsPhoto);
+    const text = document.getElementById('threads-text-preview').innerText;
+    await postToThreads(token, threadsId, text, imgUrl);
+    document.getElementById('threads-status').innerHTML='<div class="status-box status-ok">✅ Berhasil diposting ke Threads!</div>';
+    btn.style.display='none';
+  } catch(e) {
+    document.getElementById('threads-status').innerHTML='<div class="status-box status-err">❌ '+e.message+'</div>';
+  }
+  btn.disabled=false; btn.innerHTML='🧵 Post ke Threads';
+}
+
 function saveSettings(){
-  ['s-token','s-igid','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-threads-id','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
