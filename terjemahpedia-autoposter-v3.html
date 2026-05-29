@@ -452,6 +452,14 @@ label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:600;
         <p class="hint">Dari Graph API Explorer → <code>me?fields=id</code></p>
       </div>
       <div class="field">
+        <label>Threads Access Token</label>
+        <div style="display:flex;gap:6px;">
+          <input type="password" id="s-threads-token" placeholder="THAA..." style="flex:1;">
+          <button class="btn" style="padding:9px;" onclick="toggleThreadsTok()">👁️</button>
+        </div>
+        <p class="hint">Token khusus Threads dari <a href="https://developers.facebook.com/apps/" target="_blank">Threads API → Token Generator</a> (diawali THAA...)</p>
+      </div>
+      <div class="field">
         <label>Threads Proxy URL</label>
         <input type="text" id="s-threads-proxy" placeholder="https://threads-proxy.namaku.workers.dev">
         <p class="hint">URL Cloudflare Worker proxy untuk bypass CORS. Deploy dari file <code>threads-proxy-worker.js</code></p>
@@ -558,7 +566,7 @@ function switchTab(name, el) {
 
 // ===================== LOAD SETTINGS =====================
 window.onload = () => {
-  ['s-token','s-igid','s-threads-id','s-threads-proxy','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-threads-id','s-threads-token','s-threads-proxy','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=localStorage.getItem('ap_'+id); if(v) el.value=v;
   });
@@ -633,27 +641,28 @@ async function runFeed() {
   }
 
   // Step 5: Post ke Threads
+  const threadsToken = localStorage.getItem('ap_s-threads-token') || localStorage.getItem('ap_s-token');
   const threadsId = localStorage.getItem('ap_s-threads-id');
-  if(postThreads_on && token && threadsId) {
+  if(postThreads_on && threadsToken && threadsId) {
     setStep('fs-threads','fd-threads','ft-threads','active','⏳','Posting ke Threads...');
     try{
       // Generate teks Threads (lebih pendek dari IG)
       let threadsText = feedCaption;
       try { threadsText = await genCaption(cmd,'threads'); } catch(e) {}
-      await postToThreads(token, threadsId, threadsText, feedPubUrl||null);
+      await postToThreads(threadsToken, threadsId, threadsText, feedPubUrl||null);
       setStep('fs-threads','fd-threads','ft-threads','done','✓','✅ Threads berhasil!');
     }catch(e){
       setStep('fs-threads','fd-threads','ft-threads','err','✗','Threads gagal: '+e.message);
     }
   } else if(postThreads_on) {
-    setStep('fs-threads','fd-threads','ft-threads','err','!','Atur Threads ID di Pengaturan');
+    setStep('fs-threads','fd-threads','ft-threads','err','!','Atur Threads Token & ID di Pengaturan');
   } else {
     setStep('fs-threads','fd-threads','ft-threads','done','-','Skip Threads');
   }
 
   // Status akhir
   const igOk = postIG_on && token && igId;
-  const thrOk = postThreads_on && token && threadsId;
+  const thrOk = postThreads_on && threadsToken && threadsId;
   if(igOk || thrOk) {
     document.getElementById('feed-status').innerHTML=`<div class="status-box status-ok">✅ Selesai diposting ke ${[postIG_on?'Instagram':'',postThreads_on?'Threads':''].filter(Boolean).join(' & ')}!</div>`;
   }
@@ -2345,6 +2354,7 @@ async function runUploadPost() {
   const caption = document.getElementById('local-caption').value.trim();
   if(!caption) { alert('Isi caption dulu atau klik Auto Caption!'); return; }
   const token = localStorage.getItem('ap_s-token');
+  const threadsToken = localStorage.getItem('ap_s-threads-token') || localStorage.getItem('ap_s-token');
   const igId = localStorage.getItem('ap_s-igid');
   const threadsId = localStorage.getItem('ap_s-threads-id');
   const toIG = document.getElementById('upload-to-ig').checked;
@@ -2363,8 +2373,8 @@ async function runUploadPost() {
       catch(e) { results.push('❌ Instagram: '+e.message); }
     }
     // Post ke Threads
-    if(toThreads && token && threadsId) {
-      try { await postToThreads(token,threadsId,caption,pubUrl); results.push('✅ Threads'); }
+    if(toThreads && threadsToken && threadsId) {
+      try { await postToThreads(threadsToken,threadsId,caption,pubUrl); results.push('✅ Threads'); }
       catch(e) { results.push('❌ Threads: '+e.message); }
     }
     status.innerHTML=`<div class="status-box status-ok">${results.join('<br>')}</div>`;
@@ -2444,13 +2454,14 @@ function startSchedule(){
         const toIG=document.getElementById('post-to-ig').checked;
         const toTh=document.getElementById('post-to-threads').checked;
         const token=localStorage.getItem('ap_s-token');
+        const threadsToken=localStorage.getItem('ap_s-threads-token')||localStorage.getItem('ap_s-token');
         const igId=localStorage.getItem('ap_s-igid');
         const threadsId=localStorage.getItem('ap_s-threads-id');
         const cap=await genCaption(cmdNow,'feed');
         const img=await genImage(cmdNow);
         const pub=await uploadImgBB(img);
         if(toIG&&token&&igId){await postIG(token,igId,pub,cap,'photo');addSchedLog(`✅ ${minsToTime(t)} Instagram oke`);}
-        if(toTh&&token&&threadsId){const tc=await genCaption(cmdNow,'threads').catch(()=>cap);await postToThreads(token,threadsId,tc,pub);addSchedLog(`✅ ${minsToTime(t)} Threads oke`);}
+        if(toTh&&threadsToken&&threadsId){const tc=await genCaption(cmdNow,'threads').catch(()=>cap);await postToThreads(threadsToken,threadsId,tc,pub);addSchedLog(`✅ ${minsToTime(t)} Threads oke`);}
         addHistory(cmdNow,img,'posted','schedule');
       }catch(e){addSchedLog(`❌ ${minsToTime(t)} — ${e.message}`);}
     },delay);
@@ -2535,7 +2546,7 @@ async function postToThreads(token, threadsId, text, imageUrl=null) {
 async function runThreads() {
   const cmd = document.getElementById('threads-cmd').value.trim();
   if(!cmd){ alert('Isi teks konten dulu!'); return; }
-  const token = localStorage.getItem('ap_s-token');
+  const token = localStorage.getItem('ap_s-threads-token') || localStorage.getItem('ap_s-token');
   const threadsId = localStorage.getItem('ap_s-threads-id');
 
   setBtnLoad('threads-btn','⏳ Memproses...');
@@ -2574,17 +2585,17 @@ async function runThreads() {
       document.getElementById('threads-post-btn').style.display='inline-flex';
     }
   } else {
-    setStep('ts-post','td-post','tt-post','err','!','Atur Threads ID di Pengaturan');
-    document.getElementById('threads-status').innerHTML='<div class="status-box status-err">⚠️ Atur Threads User ID di tab Pengaturan</div>';
+    setStep('ts-post','td-post','tt-post','err','!','Atur Threads Token & ID di Pengaturan');
+    document.getElementById('threads-status').innerHTML='<div class="status-box status-err">⚠️ Atur Threads Access Token & User ID di tab Pengaturan</div>';
     document.getElementById('threads-post-btn').style.display='inline-flex';
   }
   resetBtn('threads-btn','🧵 Generate & Post ke Threads');
 }
 
 async function manualPostThreads() {
-  const token = localStorage.getItem('ap_s-token');
+  const token = localStorage.getItem('ap_s-threads-token') || localStorage.getItem('ap_s-token');
   const threadsId = localStorage.getItem('ap_s-threads-id');
-  if(!token||!threadsId){ alert('Atur token & Threads ID di Pengaturan'); return; }
+  if(!token||!threadsId){ alert('Atur Threads Access Token & Threads ID di Pengaturan'); return; }
   const btn = document.getElementById('threads-post-btn');
   btn.disabled=true; btn.innerHTML='⏳ Posting...';
   try {
@@ -2601,7 +2612,7 @@ async function manualPostThreads() {
 }
 
 function saveSettings(){
-  ['s-token','s-igid','s-threads-id','s-threads-proxy','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
+  ['s-token','s-igid','s-threads-id','s-threads-token','s-threads-proxy','s-imgbb','s-cloud-name','s-cloud-preset','s-anthropic'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const v=el.value.trim();if(v)localStorage.setItem('ap_'+id,v);
   });
@@ -2624,6 +2635,7 @@ async function testConn(){
 }
 
 function toggleTok(){const i=document.getElementById('s-token');i.type=i.type==='password'?'text':'password';}
+function toggleThreadsTok(){const i=document.getElementById('s-threads-token');i.type=i.type==='password'?'text':'password';}
 
 // Canvas helpers
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
